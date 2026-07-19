@@ -4,7 +4,7 @@ ApplyProof is a Chrome extension that helps people complete job applications wit
 
 Traditional autofill handles contact details. Generic AI can write polished answers, but may exaggerate or invent experience. ApplyProof combines the speed of autofill with visible evidence, conservative answer generation, and a final accuracy audit.
 
-> **Project status:** planning and initial build. The repository does not contain a working extension yet. We are building the local demo first, then polishing and expanding it.
+> **Project status:** Phase 1 foundation implemented. The local extension shell, mock application, shared contracts, and API are ready for the scanning milestone.
 
 ## The idea
 
@@ -112,12 +112,12 @@ The demo should remain useful without a model key where practical. Deterministic
 
 ## Answer statuses
 
-| Status | Meaning | Automatic fill |
-| --- | --- | --- |
-| `verified` | Directly mapped to confirmed candidate information | Allowed after user initiates autofill |
-| `generated` | Drafted from cited candidate evidence | Only after preview and user action |
-| `needs_review` | Ambiguous, sensitive, time-dependent, or high-risk | Never |
-| `unsupported` | Information is missing or a claim lacks evidence | Never |
+| Status         | Meaning                                            | Automatic fill                        |
+| -------------- | -------------------------------------------------- | ------------------------------------- |
+| `verified`     | Directly mapped to confirmed candidate information | Allowed after user initiates autofill |
+| `generated`    | Drafted from cited candidate evidence              | Only after preview and user action    |
+| `needs_review` | Ambiguous, sensitive, time-dependent, or high-risk | Never                                 |
+| `unsupported`  | Information is missing or a claim lacks evidence   | Never                                 |
 
 ## Safety boundaries
 
@@ -191,7 +191,51 @@ We prioritize a dependable demo, conservative behavior, and clear evidence over 
 
 ## Getting started
 
-Setup commands will be added with the foundation milestone. Until then, this repository contains the agreed product scope and implementation roadmap only.
+### Prerequisites
+
+- Node.js 20 or newer and npm 10 or newer
+- Python 3.12 or newer
+- Google Chrome 116 or newer for the Side Panel API
+
+### Install
+
+```bash
+npm install
+python3 -m venv .venv
+.venv/bin/pip install -e 'apps/api[dev]'
+cp .env.example .env
+```
+
+### Run the local surfaces
+
+Use a separate terminal for each process:
+
+```bash
+npm run dev:web
+npm run dev:extension
+npm run dev:api
+```
+
+- Mock application: `http://localhost:5173`
+- API health check: `http://127.0.0.1:8000/health`
+- API documentation: `http://127.0.0.1:8000/docs`
+
+For Chrome, build the extension with `npm run build --workspace @applyproof/extension`, open
+`chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select
+`apps/extension/dist`. Click the ApplyProof toolbar action to open its side panel.
+
+### Verify
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+The API scripts expect the project-local `.venv` created by the install steps. The extension and
+mock application contain no model dependency or secrets in Phase 1.
 
 Before submitting, use the [hackathon submission checklist](docs/SUBMISSION_CHECKLIST.md).
 

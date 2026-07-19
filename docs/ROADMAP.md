@@ -12,15 +12,15 @@ This roadmap turns the product plan into a demo-first build sequence. Every mile
 
 ### Progress summary
 
-| Phase | Status |
-| --- | --- |
-| 1. Demo foundation | Not started |
-| 2. Page scanning | Not started |
+| Phase                             | Status      |
+| --------------------------------- | ----------- |
+| 1. Demo foundation                | In progress |
+| 2. Page scanning                  | Not started |
 | 3. Demo profile and safe autofill | Not started |
-| 4. Grounded answer review | Not started |
-| 5. Claim verification and audit | Not started |
-| 6. Hackathon polish | Not started |
-| 7. Post-demo productization | Deferred |
+| 4. Grounded answer review         | Not started |
+| 5. Claim verification and audit   | Not started |
+| 6. Hackathon polish               | Not started |
+| 7. Post-demo productization       | Deferred    |
 
 ## Definition of the first demo
 
@@ -34,21 +34,21 @@ No account, personal resume, production deployment, or automatic submission is r
 
 ### Deliverables
 
-- [ ] Monorepo workspace and shared scripts
-- [ ] Manifest V3 extension shell
-- [ ] Chrome side panel with placeholder Profile, Analyze, Review, and Audit states
-- [ ] Northstar Labs mock application containing all target field types
-- [ ] FastAPI service with a health endpoint
-- [ ] Shared core data contracts
-- [ ] Environment example and setup instructions
+- [x] Monorepo workspace and shared scripts
+- [x] Manifest V3 extension shell
+- [x] Chrome side panel with placeholder Profile, Analyze, Review, and Audit states
+- [x] Northstar Labs mock application containing all target field types
+- [x] FastAPI service with a health endpoint
+- [x] Shared core data contracts
+- [x] Environment example and setup instructions
 
 ### Acceptance criteria
 
 - [ ] The extension can be loaded unpacked in Chrome.
 - [ ] Clicking the extension opens the side panel.
-- [ ] The mock application runs locally and displays the complete demo form.
-- [ ] The API health endpoint returns successfully.
-- [ ] Linting, type checking, and baseline tests pass.
+- [x] The mock application runs locally and displays the complete demo form.
+- [x] The API health endpoint returns successfully.
+- [x] Linting, type checking, and baseline tests pass.
 
 ## Phase 2 — Page scanning
 
