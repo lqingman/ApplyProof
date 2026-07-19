@@ -178,5 +178,7 @@ At the end of every phase:
 - run formatter, linter, type checker, unit tests, and relevant integration tests;
 - manually repeat the demo path;
 - update the README if commands or behavior changed;
+- add a dated entry to `docs/BUILD_LOG.md` describing the human decisions and Codex contribution;
+- save a short screenshot or clip when the milestone demonstrates a useful Codex-assisted planning, implementation, debugging, or verification moment;
 - record known limitations; and
 - create one descriptive milestone commit.

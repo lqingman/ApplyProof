@@ -95,7 +95,9 @@ ApplyProof/
 │   ├── shared-types/    # Shared contracts and validation schemas
 │   └── sample-data/     # Maya profile, evidence, and job fixture
 ├── docs/
-│   └── ROADMAP.md
+│   ├── BUILD_LOG.md
+│   ├── ROADMAP.md
+│   └── SUBMISSION_CHECKLIST.md
 └── README.md
 ```
 
@@ -143,6 +145,36 @@ Development follows a demo-first sequence:
 
 See [the detailed roadmap](docs/ROADMAP.md) for acceptance criteria and sequencing.
 
+## How GPT-5.6 and Codex were used
+
+ApplyProof is being planned and built collaboratively with Codex. We use GPT-5.6 for the work that benefits from broad reasoning and semantic understanding, while keeping product ownership and final decisions with the human builder.
+
+### Where Codex accelerated the workflow
+
+- Read the original long-form product plan and converted it into a narrower, judge-ready vertical slice.
+- Inspected the new repository before proposing implementation work.
+- Created the initial README and phased roadmap from the planning conversation.
+- Made safety requirements—no automatic submission, no unsupported claims, and human review for high-risk questions—explicit acceptance criteria rather than informal intentions.
+- Identified features that should be deterministic and moved expensive or risky features, such as broad ATS support and vector search, after the demo milestone.
+
+As implementation progresses, this section will be updated with concrete examples of code generation, debugging, test creation, browser verification, and design iteration.
+
+### Key decisions made by the human builder
+
+- Build the controlled demo first, then polish it before expanding scope.
+- Position ApplyProof around truthfulness and visible evidence, not generic form filling.
+- Keep applicants in control of generated, sensitive, and legal answers.
+- Optimize the hackathon build for one coherent end-to-end experience.
+
+### How we preserve evidence of the collaboration
+
+- Maintain a dated [build and decision log](docs/BUILD_LOG.md).
+- Use milestone commits so the repository history shows how the project evolved.
+- Record representative Codex planning, implementation, testing, and browser-validation moments for the demo video.
+- Run `/feedback` in the primary Codex project task after the majority of core functionality has been built, then place that Session ID in the Devpost submission form.
+
+The `/feedback` Session ID is submission metadata and does not need to be published in this README.
+
 ## Development approach
 
 Each milestone should be a small, demonstrable vertical slice:
@@ -160,6 +192,8 @@ We prioritize a dependable demo, conservative behavior, and clear evidence over 
 ## Getting started
 
 Setup commands will be added with the foundation milestone. Until then, this repository contains the agreed product scope and implementation roadmap only.
+
+Before submitting, use the [hackathon submission checklist](docs/SUBMISSION_CHECKLIST.md).
 
 ## License
 
