@@ -8,6 +8,10 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
+import { generateAnswerDraft } from "./answerApi";
+import { fillActivePage, scanActivePage } from "./browser";
+
+vi.mock("./answerApi", () => ({ generateAnswerDraft: vi.fn() }));
 
 vi.mock("./browser", () => ({
   scanActivePage: vi.fn().mockResolvedValue({
@@ -93,5 +97,68 @@ describe("profile-first autofill workflow", () => {
     expect(
       screen.getByText("View all 3 detected safe fields"),
     ).toBeInTheDocument();
+  });
+
+  it("keeps a draft in review until the user fills the exact text", async () => {
+    vi.mocked(scanActivePage).mockResolvedValueOnce({
+      blockedCount: 0,
+      fields: [
+        {
+          id: "project",
+          label: "Describe a relevant project.",
+          kind: "textarea",
+          required: true,
+          value: "",
+          options: [],
+          maxLength: 700,
+        },
+      ],
+    });
+    vi.mocked(fillActivePage)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ fieldId: "project", status: "filled" }]);
+    vi.mocked(generateAnswerDraft).mockResolvedValueOnce({
+      fieldId: "project",
+      draft: "A grounded project answer.",
+      evidenceIds: ["project-campus-map"],
+      notes: ["No measurable outcome is recorded."],
+      followUpQuestion: null,
+      characterCount: 26,
+      fitsLimit: true,
+    });
+    render(<App />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use Maya demo profile" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Scan & Autofill" }));
+    await screen.findByRole("button", { name: "Generate grounded draft" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Generate grounded draft" }),
+    );
+
+    const editor = await screen.findByLabelText(
+      "Reviewed answer for Describe a relevant project.",
+    );
+    expect(editor).toHaveValue("A grounded project answer.");
+    expect(screen.getByText("Need review").previousSibling).toHaveTextContent(
+      "1",
+    );
+    fireEvent.change(editor, {
+      target: { value: "My reviewed exact answer." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Fill answer" }));
+
+    await waitFor(() =>
+      expect(fillActivePage).toHaveBeenLastCalledWith([
+        { fieldId: "project", value: "My reviewed exact answer." },
+      ]),
+    );
+    expect(screen.getByText("Need review").previousSibling).toHaveTextContent(
+      "0",
+    );
+    expect(screen.getByText("Safely filled").previousSibling).toHaveTextContent(
+      "1",
+    );
   });
 });
