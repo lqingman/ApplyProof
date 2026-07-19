@@ -53,6 +53,8 @@ class AnswerDraftResponse(ApiModel):
 
 
 class ProviderDraft(ApiModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
     field_id: str
     draft: str
     evidence_ids: list[str]

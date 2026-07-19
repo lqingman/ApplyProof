@@ -282,6 +282,7 @@ def test_openrouter_provider_uses_responses_with_structured_outputs() -> None:
     assert body["model"] == "openai/test-model"
     assert body["text"]["format"]["type"] == "json_schema"  # type: ignore[index]
     assert body["text"]["format"]["strict"] is True  # type: ignore[index]
+    assert body["text"]["format"]["schema"]["additionalProperties"] is False  # type: ignore[index]
     assert body["store"] is False
 
 

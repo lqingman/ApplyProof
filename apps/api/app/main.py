@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -5,6 +7,8 @@ from pydantic import BaseModel
 from .contracts import AnswerDraftRequest, AnswerDraftResponse, empty_response
 from .providers import configured_provider, resume_based_ai_fallback
 from .validation import validate_draft
+
+logger = logging.getLogger(__name__)
 
 
 class HealthResponse(BaseModel):
@@ -47,6 +51,7 @@ def answer_draft(request: AnswerDraftRequest) -> AnswerDraftResponse:
             candidate = resume_based_ai_fallback(request) or candidate
         return validate_draft(request, candidate)
     except Exception:
+        logger.exception("Answer draft generation failed")
         return empty_response(
             request,
             "Drafting is temporarily unavailable. You can still write this answer manually.",
