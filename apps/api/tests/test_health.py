@@ -1,0 +1,21 @@
+import asyncio
+
+from httpx import ASGITransport, AsyncClient, Response
+
+from app.main import app
+
+
+def test_health_endpoint() -> None:
+    async def get_health() -> Response:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get("/health")
+
+    response = asyncio.run(get_health())
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "service": "applyproof-api",
+        "version": "0.1.0",
+    }
