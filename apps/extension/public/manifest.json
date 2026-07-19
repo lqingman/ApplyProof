@@ -3,7 +3,8 @@
   "name": "ApplyProof",
   "version": "0.1.0",
   "description": "Grounded assistance for truthful job applications.",
-  "permissions": ["sidePanel"],
+  "permissions": ["sidePanel", "activeTab", "scripting"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
   "background": {
     "service_worker": "background.js"
   },
