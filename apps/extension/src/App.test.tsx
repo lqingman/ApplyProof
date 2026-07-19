@@ -87,7 +87,7 @@ describe("profile-first autofill workflow", () => {
     expect(screen.getByText("Selected")).toBeInTheDocument();
   });
 
-  it("prioritizes outcomes and review exceptions after autofill", async () => {
+  it("keeps the completed workflow compact after autofill", async () => {
     render(<App />);
 
     fireEvent.click(
@@ -96,22 +96,17 @@ describe("profile-first autofill workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Scan & Autofill" }));
 
     await waitFor(() =>
-      expect(
-        screen.getByRole("heading", { name: "Autofill summary" }),
-      ).toBeInTheDocument(),
+      expect(screen.getByRole("status")).toHaveTextContent("Autofill complete"),
     );
-    expect(screen.getByText("Safely filled").previousSibling).toHaveTextContent(
-      "4",
-    );
-    expect(screen.getByText("Need review").previousSibling).toHaveTextContent(
-      "0",
-    );
-    expect(screen.getByText("Skipped").previousSibling).toHaveTextContent("0");
-    expect(screen.getByText("Blocked").previousSibling).toHaveTextContent("1");
-    expect(screen.getByText("Nothing needs review.")).toBeInTheDocument();
     expect(
-      screen.getByText("View all 4 detected safe fields"),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Autofill summary" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Review queue" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/View all .* detected safe fields/),
+    ).not.toBeInTheDocument();
     expect(fillActivePage).toHaveBeenCalledWith(
       expect.arrayContaining([
         {
@@ -124,7 +119,7 @@ describe("profile-first autofill workflow", () => {
     );
   });
 
-  it("routes open questions to the inline page assistant", async () => {
+  it("routes open questions to the page without rendering a side-panel queue", async () => {
     vi.mocked(scanActivePage).mockResolvedValueOnce({
       blockedCount: 0,
       fields: [
@@ -147,19 +142,17 @@ describe("profile-first autofill workflow", () => {
       screen.getByRole("button", { name: "Use Maya demo profile" }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Scan & Autofill" }));
-    const button = await screen.findByRole("button", {
-      name: "Open writing assistant ↗",
-    });
-    expect(enableInlineAssistants).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ id: "project" })]),
+    await waitFor(() =>
+      expect(enableInlineAssistants).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ id: "project" })]),
+      ),
     );
-    expect(screen.getByText("Need review").previousSibling).toHaveTextContent(
-      "1",
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Some fields still need your attention on the page",
     );
     expect(
-      screen.getByText(/Before regenerating, add an optional instruction/),
-    ).toBeInTheDocument();
-    fireEvent.click(button);
+      screen.queryByRole("heading", { name: "Review queue" }),
+    ).not.toBeInTheDocument();
   });
 
   it("generates page requests with the user's extra instruction", async () => {
