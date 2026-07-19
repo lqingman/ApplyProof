@@ -1,14 +1,5 @@
 import { z } from "zod";
 
-export const answerStatusSchema = z.enum([
-  "verified",
-  "generated",
-  "needs_review",
-  "unsupported",
-]);
-
-export type AnswerStatus = z.infer<typeof answerStatusSchema>;
-
 export const fieldKindSchema = z.enum([
   "text",
   "email",
@@ -102,16 +93,48 @@ export const candidateProfileSchema = z.object({
 
 export type CandidateProfile = z.infer<typeof candidateProfileSchema>;
 
-export const answerDraftSchema = z.object({
-  fieldId: z.string().min(1),
-  answer: z.string(),
-  status: answerStatusSchema,
-  evidenceIds: z.array(z.string()),
-  confidence: z.number().min(0).max(1),
-  warnings: z.array(z.string()),
+export const answerDraftFieldSchema = z.object({
+  id: z.string().min(1).max(120),
+  question: z.string().trim().min(1).max(1000),
+  maxCharacters: z.number().int().min(50).max(5000).optional(),
 });
 
-export type AnswerDraft = z.infer<typeof answerDraftSchema>;
+export const answerDraftJobSchema = z.object({
+  company: z.string().trim().min(1).max(200),
+  role: z.string().trim().min(1).max(200),
+  requirements: z.array(z.string().trim().min(1).max(200)).max(20),
+});
+
+export const answerDraftRequestSchema = z
+  .object({
+    field: answerDraftFieldSchema,
+    job: answerDraftJobSchema,
+    evidence: z.array(evidenceRecordSchema).max(20),
+  })
+  .superRefine((request, context) => {
+    const ids = request.evidence.map((record) => record.id);
+    if (new Set(ids).size !== ids.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["evidence"],
+        message: "Evidence IDs must be unique.",
+      });
+    }
+  });
+
+export type AnswerDraftRequest = z.infer<typeof answerDraftRequestSchema>;
+
+export const answerDraftResponseSchema = z.object({
+  fieldId: z.string().min(1),
+  draft: z.string(),
+  evidenceIds: z.array(z.string()),
+  notes: z.array(z.string()),
+  followUpQuestion: z.string().nullable(),
+  characterCount: z.number().int().nonnegative(),
+  fitsLimit: z.boolean(),
+});
+
+export type AnswerDraftResponse = z.infer<typeof answerDraftResponseSchema>;
 
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),

@@ -48,5 +48,11 @@ export const mayaProfile = candidateProfileSchema.parse({
       text: "Uses TypeScript, React, Python, FastAPI, Git, and automated testing.",
       source: "Demo resume · Skills",
     },
+    {
+      id: "interest-accessible-products",
+      category: "profile",
+      text: "Interested in building accessible, user-focused software products.",
+      source: "Demo profile · Interests",
+    },
   ],
 });

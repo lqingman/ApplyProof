@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  answerDraftSchema,
+  answerDraftRequestSchema,
+  answerDraftResponseSchema,
   normalizedFieldSchema,
   pageScanSchema,
 } from "./index";
@@ -19,15 +20,29 @@ describe("shared contracts", () => {
     ).toMatchObject({ options: [] });
   });
 
-  it("rejects confidence outside the supported range", () => {
+  it("uses the evidence-first answer contract without a draft status", () => {
+    const response = answerDraftResponseSchema.parse({
+      fieldId: "project",
+      draft: "A grounded answer",
+      evidenceIds: ["project-1"],
+      notes: [],
+      followUpQuestion: null,
+      characterCount: 17,
+      fitsLimit: true,
+    });
+    expect(response).not.toHaveProperty("status");
+    expect(response).not.toHaveProperty("confidence");
+  });
+
+  it("rejects duplicate evidence IDs", () => {
     expect(() =>
-      answerDraftSchema.parse({
-        fieldId: "motivation",
-        answer: "A grounded answer",
-        status: "generated",
-        evidenceIds: ["project-1"],
-        confidence: 1.5,
-        warnings: [],
+      answerDraftRequestSchema.parse({
+        field: { id: "project", question: "Describe a project." },
+        job: { company: "Northstar Labs", role: "Engineer", requirements: [] },
+        evidence: [
+          { id: "same", category: "project", text: "One", source: "Resume" },
+          { id: "same", category: "skill", text: "Two", source: "Resume" },
+        ],
       }),
     ).toThrow();
   });
