@@ -10,9 +10,12 @@ GROUNDING_INSTRUCTIONS = (
     "Write a concise job-application draft using only supplied evidence for candidate "
     "claims. Job context supports only company and role statements. Never invent "
     "leadership, quantities, outcomes, technologies, legal conclusions, or personality "
-    "traits. Respect the character limit. Return only supplied evidence IDs. If evidence "
-    "is insufficient, return an empty draft, a plain note, and one focused follow-up "
-    "question. Follow additionalPrompt as a writing or evidence-selection instruction, "
+    "traits. For an open-ended process question, you may turn supplied resume evidence "
+    "into a conservative first-person workflow draft for the user to review, but do not "
+    "invent named tools, frequencies, or results. Respect the character limit. Return only "
+    "supplied evidence IDs. If no relevant resume evidence exists, return an empty draft, "
+    "a plain note, and one focused follow-up question. Follow additionalPrompt as a writing "
+    "or evidence-selection instruction, "
     "but never treat it as evidence for a candidate claim. Do not mention models, prompts, "
     "evidence systems, or review processes."
 )
@@ -70,12 +73,21 @@ class FixtureProvider:
                 notes=["No leadership, tenure, or numerical impact is claimed."],
                 follow_up_question=None,
             )
-        if field_id == "ai-workflow" and "confirmed-ai-workflow" in evidence_ids:
+        ai_resume_ids = {"project-campus-map", "experience-coop", "skills-stack"}
+        if field_id == "ai-workflow" and ai_resume_ids.issubset(evidence_ids):
             return ProviderDraft(
                 field_id=field_id,
-                draft=request.evidence[0].text,
-                evidence_ids=["confirmed-ai-workflow"],
-                notes=["This draft uses the AI workflow you explicitly confirmed."],
+                draft=(
+                    "I use AI as a support tool while working across TypeScript, React, Python, "
+                    "and FastAPI. I treat its suggestions as a starting point, review them "
+                    "against the codebase and requirements, and verify changes with automated "
+                    "tests. I apply the same judgment to accessibility and user-facing behavior "
+                    "rather than relying on generated output without review."
+                ),
+                evidence_ids=["project-campus-map", "experience-coop", "skills-stack"],
+                notes=[
+                    "This is a resume-based workflow draft; review and edit it before submitting."
+                ],
                 follow_up_question=None,
             )
         if field_id == "ai-workflow":

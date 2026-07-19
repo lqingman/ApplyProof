@@ -77,6 +77,44 @@ def test_ai_question_without_evidence_returns_follow_up() -> None:
     assert "verify" in payload["followUpQuestion"]
 
 
+def test_ai_question_uses_resume_evidence_for_a_reviewable_draft() -> None:
+    body = request_body("ai-workflow")
+    body["evidence"] = [
+        {
+            "id": "project-campus-map",
+            "category": "project",
+            "text": (
+                "Built an accessible campus navigation app with React, TypeScript, and FastAPI."
+            ),
+            "source": "Demo resume · Projects",
+        },
+        {
+            "id": "experience-coop",
+            "category": "experience",
+            "text": "Shipped tested product improvements during a software engineering co-op.",
+            "source": "Demo resume · Experience",
+        },
+        {
+            "id": "skills-stack",
+            "category": "skill",
+            "text": "Uses TypeScript, React, Python, FastAPI, Git, and automated testing.",
+            "source": "Demo resume · Skills",
+        },
+    ]
+
+    response = post_draft(body)
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["draft"]
+    assert payload["followUpQuestion"] is None
+    assert payload["evidenceIds"] == [
+        "project-campus-map",
+        "experience-coop",
+        "skills-stack",
+    ]
+
+
 def test_three_fixture_answers_are_grounded_and_fit_their_limits() -> None:
     requests = {
         "motivation": [

@@ -14,9 +14,10 @@ export const northstarJob = {
 const strategies: Record<string, string[]> = {
   motivation: ["interest-accessible-products", "project-campus-map"],
   project: ["project-campus-map"],
-  "ai-workflow": [],
   strengths: ["education-ubc", "experience-coop", "skills-stack"],
 };
+
+const aiWorkflowPattern = /\b(?:ai|artificial intelligence|copilot|llm)\b/i;
 
 export function selectEvidence(
   profile: CandidateProfile,
@@ -29,10 +30,13 @@ export function selectEvidence(
   if (additionalPrompt?.trim()) return profile.evidence.slice(0, 20);
 
   const selectedIds = strategies[field.id];
-  if (field.id === "ai-workflow") {
-    return profile.evidence.filter(
-      (record) => record.id === "confirmed-ai-workflow",
-    );
+  if (field.id === "ai-workflow" || aiWorkflowPattern.test(field.label)) {
+    const resumeIds = new Set([
+      "project-campus-map",
+      "experience-coop",
+      "skills-stack",
+    ]);
+    return profile.evidence.filter((record) => resumeIds.has(record.id));
   }
   if (selectedIds) {
     return selectedIds

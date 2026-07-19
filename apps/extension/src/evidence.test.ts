@@ -26,14 +26,14 @@ describe("answer evidence selection", () => {
     });
   });
 
-  it("does not invent AI workflow evidence", () => {
+  it("uses relevant resume evidence for an AI workflow draft", () => {
     expect(
       selectEvidence(mayaProfile, {
         ...field,
         id: "ai-workflow",
         label: "How do you use AI in your development workflow?",
-      }),
-    ).toEqual([]);
+      }).map((record) => record.id),
+    ).toEqual(["project-campus-map", "experience-coop", "skills-stack"]);
   });
 
   it("passes an extra instruction and all verified evidence for user-directed selection", () => {
