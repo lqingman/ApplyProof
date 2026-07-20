@@ -116,7 +116,11 @@ export function App() {
     setEditingProfile(false);
     setInitialResumeFile(null);
     setStatus("idle");
-    setMessage("My Profile was saved locally and is ready for autofill.");
+    setMessage(
+      importedResume
+        ? `My Profile and ${importedResume.name} were saved locally.`
+        : "My Profile was saved locally and is ready for autofill.",
+    );
   }
 
   async function loadDemoData() {
@@ -299,28 +303,6 @@ export function App() {
               </div>
               <span className="selected-badge">Saved</span>
             </div>
-            <div className="profile-facts">
-              <span>{profile.identity.email}</span>
-              {profile.education[0]?.degree && (
-                <span>{profile.education[0].degree}</span>
-              )}
-              <span>{profile.education.length} education entries</span>
-              <span>{profile.experience.length} experience entries</span>
-              <span>Work authorization answers saved</span>
-              <span>
-                {Object.values(profile.demographics).filter(Boolean).length}{" "}
-                voluntary answers saved
-              </span>
-              <span>{profile.evidence.length} evidence records</span>
-            </div>
-            <details className="profile-details">
-              <summary>Inspect profile evidence</summary>
-              <ul>
-                {profile.evidence.map((record) => (
-                  <li key={record.id}>{record.text}</li>
-                ))}
-              </ul>
-            </details>
             <section
               className="saved-resume"
               aria-labelledby="saved-resume-heading"
@@ -379,6 +361,28 @@ export function App() {
                 }}
               />
             </section>
+            <div className="profile-facts">
+              <span>{profile.identity.email}</span>
+              {profile.education[0]?.degree && (
+                <span>{profile.education[0].degree}</span>
+              )}
+              <span>{profile.education.length} education entries</span>
+              <span>{profile.experience.length} experience entries</span>
+              <span>Work authorization answers saved</span>
+              <span>
+                {Object.values(profile.demographics).filter(Boolean).length}{" "}
+                voluntary answers saved
+              </span>
+              <span>{profile.evidence.length} evidence records</span>
+            </div>
+            <details className="profile-details">
+              <summary>Inspect profile evidence</summary>
+              <ul>
+                {profile.evidence.map((record) => (
+                  <li key={record.id}>{record.text}</li>
+                ))}
+              </ul>
+            </details>
             <div className="profile-actions">
               <button
                 className="text-button"

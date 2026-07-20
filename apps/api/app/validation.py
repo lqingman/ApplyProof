@@ -4,8 +4,6 @@ from .contracts import (
     AnswerDraftRequest,
     AnswerDraftResponse,
     ProviderDraft,
-    ResumeExtraction,
-    ResumeExtractionRequest,
     empty_response,
 )
 
@@ -24,48 +22,6 @@ TECHNOLOGIES = {
     "kubernetes",
 }
 COMPANY_PATTERN = re.compile(r"\b(?:at|with|for)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*)*\s+Labs)\b")
-
-
-def _normalized_resume_text(value: str) -> str:
-    without_bullet_prefixes = re.sub(r"(?m)^\s*[-*•●▪◦‣⁃]+\s*", "", value)
-    return re.sub(r"\s+", " ", without_bullet_prefixes).strip()
-
-
-def preserve_verbatim_experience_descriptions(
-    request: ResumeExtractionRequest, candidate: ResumeExtraction
-) -> ResumeExtraction:
-    """Reject AI-written experience prose while retaining exact resume text."""
-    source = _normalized_resume_text(request.text)
-    baseline_by_role = {
-        (entry.company.casefold(), entry.title.casefold()): entry
-        for entry in request.baseline.experience
-    }
-    changed = False
-    experience = []
-    for entry in candidate.experience:
-        description = entry.description
-        if not description or _normalized_resume_text(description) in source:
-            experience.append(entry)
-            continue
-
-        baseline = baseline_by_role.get((entry.company.casefold(), entry.title.casefold()))
-        replacement = baseline.description if baseline else None
-        if replacement and _normalized_resume_text(replacement) not in source:
-            replacement = None
-        experience.append(entry.model_copy(update={"description": replacement}))
-        changed = True
-
-    if not changed:
-        return candidate
-    return candidate.model_copy(
-        update={
-            "experience": experience,
-            "notes": [
-                *candidate.notes,
-                "AI-rephrased work descriptions were replaced with verbatim resume text.",
-            ],
-        }
-    )
 
 
 def validate_draft(request: AnswerDraftRequest, candidate: ProviderDraft) -> AnswerDraftResponse:

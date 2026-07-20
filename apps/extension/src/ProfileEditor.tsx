@@ -348,7 +348,7 @@ export function ProfileEditor({
           Boolean(value),
       ).length;
       setImportMessage(
-        `Imported ${factCount} profile fields, ${resume.education.length} education entries, ${resume.experience.length} experience entries, and ${resume.evidence.length} evidence items from ${file.name}. ${resume.notes.at(-1) ?? "Extraction completed."} Saving My Profile will also replace My resume file. Review every field before saving.`,
+        `Imported ${factCount} profile fields, ${resume.education.length} education entries, ${resume.experience.length} experience entries, and ${resume.evidence.length} evidence items from ${file.name}. ${resume.notes.at(-1) ?? "Extraction completed."} ${file.name} is not saved yet; Save My Profile to store it in My resume file. Review every field before saving.`,
       );
     } catch (cause) {
       setError(
@@ -388,10 +388,10 @@ export function ProfileEditor({
       <fieldset className="resume-import">
         <legend>Import resume</legend>
         <p className="field-help">
-          Import a Word (.docx) or text-based PDF (.pdf) resume. The original
-          file stays in local browser storage; extracted text is sent to the
-          configured AI provider and the editable results are shown below. OCR
-          is not used.
+          Import a Word (.docx) or text-based PDF (.pdf) resume. Extracted text
+          is sent to the configured AI provider and the editable results are
+          shown below. After you save My Profile, the original file stays in
+          local browser storage. OCR is not used.
         </p>
         <label className={`file-button ${importing ? "is-disabled" : ""}`}>
           {importing ? "Reading resume…" : "Choose Word or PDF resume"}

@@ -497,7 +497,7 @@ describe("profile-first autofill workflow", () => {
     fireEvent.change(screen.getByLabelText("Choose Word or PDF resume"), {
       target: { files: [file] },
     });
-    await screen.findByText(/Saving My Profile will also replace/);
+    await screen.findByText(/updated.pdf is not saved yet/);
     expect(saveResumeFile).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Save My Profile" }));
 
