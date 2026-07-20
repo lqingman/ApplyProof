@@ -92,14 +92,17 @@ Generated text is written through the native input setter, followed by bubbling 
 
 Candidate claims should be supported by profile evidence whenever possible. Job context supports company, role, and requirement alignment but is not candidate evidence.
 
+After an imported resume is saved, its locally extracted text remains in extension-owned IndexedDB beside the original binary. ApplyProof converts relevant lines from that text into bounded evidence records at generation time. This allows project and other resume sections that were not mapped into editable Profile fields to support drafts while preserving evidence-ID validation. The original Word or PDF binary is never sent for drafting.
+
 Known demo questions use deterministic strategies:
 
-| Question class   | Preferred resume evidence                                  |
-| ---------------- | ---------------------------------------------------------- |
-| Motivation       | Product interest plus a relevant project                   |
-| Relevant project | Relevant project record                                    |
-| Strengths        | Education, experience, and skills                          |
-| AI workflow      | Project, co-op, skills, testing, and accessibility records |
+| Question class   | Preferred resume evidence                                   |
+| ---------------- | ----------------------------------------------------------- |
+| Motivation       | Product interest plus a relevant project                    |
+| Relevant project | Relevant project record                                     |
+| Strengths        | Education, experience, and skills                           |
+| AI workflow      | Project, co-op, skills, testing, and accessibility records  |
+| Cover letter     | Relevant saved-resume snippets plus job-description context |
 
 AI-workflow questions no longer require a separate `confirmed-ai-workflow` record. ApplyProof produces a conservative resume-based starting draft and asks the user to review and personalize it. It avoids inventing named AI tools, usage frequency, or results not present in the profile.
 
@@ -122,7 +125,7 @@ The scanner reads limits from:
 
 Every Generate or Regenerate action re-reads the current field rather than relying only on the initial scan. This supports dynamic ATS forms that reveal or change a limit after interaction.
 
-The live value is sent as `field.maxCharacters`. Supported API limits are 1–20,000 characters.
+The live value is sent as `field.maxCharacters`. Supported API limits are 1–20,000 characters. Sites sometimes use very large values such as 200,000 as storage ceilings rather than desired response lengths; ApplyProof safely caps those values at the API maximum before request validation.
 
 ### 3. Backend validation and retry
 
@@ -143,6 +146,8 @@ It may guide:
 
 It must not be treated as verified evidence for quantities, employers, technologies, achievements, legal status, or other candidate facts.
 
+For a cover-letter field, ApplyProof first looks for `JobPosting` structured data or an explicit job-description container. When no description is available on the application page, automatic generation is skipped and the inline control becomes a job-description input limited to 12,000 characters. User-pasted job description text is job context, not candidate evidence.
+
 ## API boundary
 
 ```text
@@ -161,7 +166,7 @@ FastAPI validation layer
         +--> GeminiProvider
 ```
 
-The page does not receive provider credentials. The side panel builds the request from the selected profile, job context, field metadata, live limit, and optional instruction.
+The page does not receive provider credentials. The side panel builds the request from the selected profile, selected locally stored resume snippets, bounded job context, field metadata, live limit, and optional instruction.
 
 ## Request contract
 
@@ -182,7 +187,8 @@ The page does not receive provider credentials. The side panel builds the reques
       "TypeScript",
       "accessibility",
       "automated testing"
-    ]
+    ],
+    "description": "Build accessible products with React and TypeScript."
   },
   "evidence": [
     {
@@ -280,7 +286,9 @@ Resume-based process answers may conservatively describe review, testing, and ve
 
 - Provider keys stay in `.env` or a deployment secret manager.
 - OpenRouter requests set `store: false`.
-- The extension sends only the selected profile evidence and current job context required for drafting.
+- The original resume binary and complete IndexedDB record remain local.
+- The extension sends only selected Profile/saved-resume evidence snippets and the bounded current job context required for drafting.
+- Extracted resume text is stored only after an explicit Import resume and Save My Profile flow. Replacing the original without importing clears the old extracted text.
 - Production logs should contain exceptions and provider metadata, not raw resumes or generated drafts.
 - ApplyProof never clicks Continue, Next, or Submit.
 
@@ -292,6 +300,9 @@ Automated tests cover:
 - true DOM checkbox selection and framework events;
 - inline assistant mounting, automatic first generation, regeneration, and existing-value preservation;
 - optional prompt propagation and expanded evidence selection;
+- cover-letter job-description extraction and manual fallback;
+- locally stored resume-text evidence selection, including project sections;
+- safe handling of site limits above 20,000 without exposing schema errors;
 - native, custom-attribute, ARIA, and helper-text character limits;
 - live-limit refresh immediately before generation;
 - one backend retry for an over-limit provider result;

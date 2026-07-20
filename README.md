@@ -123,7 +123,9 @@ Deterministic values and mapped checkboxes are inserted after the user initiates
 
 The complete open-ended-question workflow, API contract, evidence rules, fixture mode, OpenRouter mode, memory policy, and failure behavior are defined in [the grounded answer generation design](docs/ANSWER_GENERATION_DESIGN.md).
 
-New users can start `My Profile` directly with **From resume** or **From scratch**. Import supports Word `.docx` and text-based `.pdf` files up to 10 MB. The original document is stored only in extension-owned IndexedDB so it can later be attached to an ordinary resume upload field; the original binary is never sent to the ApplyProof API or model provider. During **Import resume**, the extension extracts document text locally and sends that text plus a deterministic baseline to the configured server-side AI provider. Schema-validated identity, city/region, portfolio and LinkedIn links, multiple education and work-experience records, source-review metadata, and evidence remain editable before saving. Work-experience descriptions retain the resume's wording instead of being summarized or rephrased. If AI extraction is unavailable, ApplyProof falls back to the local deterministic result. Uploading or replacing a file in **My resume file** changes only the saved document, while **Import resume** updates both the editable profile and saved document. Legacy `.doc`, encrypted PDFs, and scanned image-only PDFs without a text layer are not supported; OCR is intentionally out of scope.
+New users can start `My Profile` directly with **From resume** or **From scratch**. Import supports Word `.docx` and text-based `.pdf` files up to 10 MB. The original document is stored only in extension-owned IndexedDB so it can later be attached to an ordinary resume upload field; the original binary is never sent to the ApplyProof API or model provider. During **Import resume**, the extension extracts document text locally and sends that text plus a deterministic baseline to the configured server-side AI provider. When the user saves the imported profile, the extracted text is retained beside the original file in the same local IndexedDB record. This preserves projects and other resume sections that may not map into editable Profile fields. For grounded answers and cover letters, ApplyProof selects only relevant local text snippets as evidence and sends those snippets—not the original binary—to the API and configured provider. Replacing a file through **My resume file** clears extracted text associated with the old file; importing the replacement rebuilds it. Schema-validated identity, city/region, portfolio and LinkedIn links, multiple education and work-experience records, source-review metadata, and evidence remain editable before saving. Work-experience descriptions retain the resume's wording instead of being summarized or rephrased. If AI extraction is unavailable, ApplyProof falls back to the local deterministic result. Legacy `.doc`, encrypted PDFs, and scanned image-only PDFs without a text layer are not supported; OCR is intentionally out of scope.
+
+Cover-letter textareas use the same evidence boundary. ApplyProof first looks for bounded `JobPosting` structured data or an explicit job-description container. If it cannot find a job description, it does not auto-generate the cover letter and asks the user to paste the description into the inline assistant. The pasted description provides job context only; candidate claims must still come from Profile evidence or selected saved-resume snippets.
 
 ## Planned product workflow before final demo polish
 
@@ -282,8 +284,9 @@ npm run build
 
 The API scripts expect the project-local `.venv` created by the install steps. The extension and
 mock application contain no model dependency or secrets. Scanning runs only after a user action and
-passes normalized field metadata through the extension; it does not send full-page HTML or page copy
-to the API. Persistent host access is limited to the local demo origins (`localhost` and
+passes normalized field metadata plus bounded, relevant job context through the extension; it does
+not send full-page HTML. Drafting may send selected saved-resume evidence snippets and up to 12,000
+characters of extracted or user-pasted job description to the API. Persistent host access is limited to the local demo origins (`localhost` and
 `127.0.0.1`). Real application sites are not yet supported or advertised; they will be added through
 the compatibility pilot described above.
 

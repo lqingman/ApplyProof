@@ -291,6 +291,20 @@ The scanner now recognizes native `maxlength`, common custom data attributes, `a
 
 **Artifacts:** extension background service worker, manifest regression test, and build log.
 
+### 2026-07-20 — Grounded cover letters and complete local resume evidence
+
+**Goal:** fix oversized ATS character-limit failures, keep internal validation details out of the page, and make cover letters use both job context and resume sections that do not fit the editable Profile schema.
+
+**Human decision:** support cover-letter textareas as grounded open-ended answers; require job-description context; ask the user to paste the JD when safe page extraction cannot find it; retain extracted resume text locally after an explicit import and save; and continue sending only selected text evidence rather than the original document binary.
+
+**Codex contribution:** reproduced Workable's `maxlength="200000"` behavior; capped live limits at the 20,000-character API boundary; replaced raw schema errors with stable user-facing messages; added bounded `JobPosting` and explicit-container job extraction; implemented the manual-JD inline fallback; stored extracted resume text beside the original IndexedDB file; selected relevant project and other resume lines into evidence records; expanded provider guidance and fixture behavior for cover letters; and added privacy disclosures and regression coverage across the extension and API.
+
+**Why GPT-5.6 helped:** the change required coordinating ATS-specific HTML behavior, page privacy, local binary and derived-text lifecycle, prompt-injection boundaries, evidence validation, provider contracts, inline UX, and the distinction between job context and candidate claims.
+
+**Verification:** `npm run format:check`, Ruff format checks, linting, type checks, all 107 tests, production builds, and `git diff --check` pass. Tests cover a 200,000-character Workable-style field, friendly validation failure, structured and visible JD extraction, manual cover-letter JD input, skipped automatic generation without JD, local extracted-text persistence and replacement, project evidence selection, strict evidence IDs, grounded fixture cover letters, and safer recognition of saved-resume upload controls.
+
+**Artifacts:** shared answer and page-scan contracts; extension job-context extraction, resume storage, evidence selection, inline assistant, drafting client, profile UI, and tests; API contracts, provider instructions, validation, and tests; README, answer design, roadmap, site matrix, and build log.
+
 ## Entry template
 
 Copy this section for the next milestone:

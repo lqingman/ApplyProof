@@ -163,6 +163,7 @@ These items build on the stable controlled prototype and must be completed befor
 - [x] Keep all AI-extracted profile values editable and require review before save
 - [x] Return a clear unsupported-file message when a PDF has no readable text layer instead of attempting OCR
 - [x] Persist one original Word or PDF resume file locally in extension-owned IndexedDB; never upload it to the ApplyProof API or model provider
+- [x] Retain locally extracted resume text for grounded writing so unmapped project and detail sections remain usable as selected evidence
 - [x] Add a `My resume file` area to `My Profile` showing the saved filename, type, size, and last-updated time
 - [x] Let the user delete or replace the saved resume file; deleting it must not delete or change extracted profile fields
 - [x] Keep saved-file replacement separate from profile import: uploading in `My resume file` only replaces the local original and never parses, merges, or changes other profile data
@@ -182,6 +183,7 @@ These items build on the stable controlled prototype and must be completed befor
 - [x] Keep the side panel limited to profile controls, Scan & Autofill, and progress
 - [x] Treat profile facts and high-confidence remembered answers as eligible for user-initiated autofill
 - [x] Keep generated open-ended answers editable in their application fields
+- [x] Generate grounded cover letters from job-description context and saved resume evidence, with a manual JD fallback when page extraction is unavailable
 - [x] Let a user explicitly attach the locally saved resume to supported application file-upload controls, with a manual fallback for unsupported custom uploaders or cross-origin iframes
 - [x] Preserve existing page values unless the user explicitly regenerates an open-ended answer
 - [x] Exclude denied sensitive fields from scanning without collecting or recording their values

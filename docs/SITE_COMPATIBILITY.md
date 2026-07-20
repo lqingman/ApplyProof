@@ -24,6 +24,7 @@ The ordinary HTML fixture is engineering evidence for common browser primitives,
 | Accessible ARIA textbox, combobox, listbox, radio, and checkbox | Scanned; filling complex site-specific widgets is only partially supported                                                 |
 | Opaque generated IDs                                            | Classification also uses labels, names, `autocomplete`, input types, options, and limited question-container text          |
 | Client-rendered or multi-step fields                            | A later user-initiated scan discovers the current step; ApplyProof never clicks Next or Continue                           |
+| Cover-letter textareas                                          | Uses bounded page JD context and saved-resume evidence; asks for pasted JD when extraction is unavailable                  |
 | Existing values                                                 | Preserved; generated open answers change only after explicit regeneration                                                  |
 | Resume upload                                                   | Ordinary same-document file inputs are supported after an explicit user action; custom uploaders may require manual upload |
 | Same-origin and cross-origin iframes                            | Not scanned in the current pilot                                                                                           |
@@ -34,7 +35,7 @@ The ordinary HTML fixture is engineering evidence for common browser primitives,
 
 The extension uses Chrome's `activeTab` and `scripting` permissions. Clicking the toolbar action grants temporary access to that tab and explicitly opens its side panel; the automatic side-panel action behavior is disabled because it does not grant `activeTab` access. ApplyProof injects its page helper only after that user gesture and Scan & Autofill. It has no persistent permission for online job sites and no `<all_urls>` permission. Persistent host access is limited to the two local development origins.
 
-Normalized field metadata may include the field label, ID, name, input type, `autocomplete`, available option labels, and up to 500 characters of text from a recognized question container. Denied sensitive fields are excluded, including their values. The scanner does not collect the full page.
+Normalized field metadata may include the field label, ID, name, input type, `autocomplete`, available option labels, and up to 500 characters of text from a recognized question container. The scan may also include company, role, and up to 12,000 characters from `JobPosting` structured data or an explicit job-description container. Denied sensitive fields are excluded, including their values. The scanner does not collect full-page HTML.
 
 ## Pilot exit criteria
 
