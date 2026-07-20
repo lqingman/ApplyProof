@@ -265,6 +265,18 @@ The scanner now recognizes native `maxlength`, common custom data attributes, `a
 
 **Artifacts:** shared extraction contracts; API contracts, endpoint, providers, and tests; extension resume storage, extraction client, import, attachment, profile UI, browser messaging, tests, `README.md`, and `docs/ROADMAP.md`.
 
+### 2026-07-20 — Fix online-tab access from the side panel
+
+**Goal:** make the least-privilege online-tab workflow actually inject ApplyProof after the user clicks its toolbar action.
+
+**Human decision:** keep temporary `activeTab` access instead of adding persistent online host permissions or `<all_urls>`.
+
+**Codex contribution:** reproduced the failure on a normal Workable HTTPS application and confirmed that no ApplyProof content script reached the page; traced the failure to Chrome's automatic `openPanelOnActionClick` path not emitting `action.onClicked`; replaced it with an explicit action listener that receives the temporary tab grant and then opens the side panel for that tab; and added a regression test for the background event flow.
+
+**Verification:** the Workable page showed no scanner marker before the fix. Automated verification covers the explicit `action.onClicked` registration, disabled automatic panel behavior, tab-specific `sidePanel.open`, unchanged local-only persistent host permissions, and absence of `<all_urls>`.
+
+**Artifacts:** extension background service worker, manifest regression test, and build log.
+
 ## Entry template
 
 Copy this section for the next milestone:
