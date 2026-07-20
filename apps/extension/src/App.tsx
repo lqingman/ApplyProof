@@ -4,6 +4,7 @@ import type {
   CandidateProfile,
   FillResult,
   NormalizedField,
+  PageJobContext,
   RememberedAnswer,
 } from "@applyproof/shared-types";
 
@@ -27,6 +28,7 @@ import {
   deleteSavedResumeFile,
   loadSavedResumeFile,
   loadSavedResumeMetadata,
+  loadSavedResumeText,
   saveResumeFile,
   type SavedResumeMetadata,
 } from "./resumeFileStorage";
@@ -97,10 +99,11 @@ export function App() {
   async function handleProfileSave(
     updated: CandidateProfile,
     importedResume?: File,
+    importedResumeText?: string,
   ) {
     const saved = await saveMyProfile(updated);
     const resume = importedResume
-      ? await saveResumeFile(importedResume)
+      ? await saveResumeFile(importedResume, importedResumeText)
       : savedResume;
     const answers = await loadRememberedAnswers();
     setProfile(saved);
@@ -206,7 +209,7 @@ export function App() {
             " Attach the saved resume manually if this application requires it.";
         }
       }
-      const mountedCount = await enableInlineAssistants(scan.fields);
+      const mountedCount = await enableInlineAssistants(scan.fields, scan.job);
       setStatus("complete");
       const needsAttention = completed.some((item) => item.action === "review");
       setMessage(
@@ -230,11 +233,22 @@ export function App() {
         type?: string;
         field?: NormalizedField;
         additionalPrompt?: string;
+        manualJobDescription?: string;
+        job?: PageJobContext;
       };
       if (update.type === "APPLYPROOF_GENERATE_INLINE_DRAFT" && update.field) {
-        void generateAnswerDraft(
-          buildDraftRequest(profile, update.field, update.additionalPrompt),
-        )
+        const field = update.field;
+        void loadSavedResumeText()
+          .then((resumeText) =>
+            generateAnswerDraft(
+              buildDraftRequest(profile, field, {
+                additionalPrompt: update.additionalPrompt,
+                job: update.job,
+                manualJobDescription: update.manualJobDescription,
+                resumeText: resumeText ?? undefined,
+              }),
+            ),
+          )
           .then((response) => {
             const sources = response.evidenceIds
               .map(
@@ -244,8 +258,12 @@ export function App() {
               .filter((source): source is string => Boolean(source));
             sendResponse({ ok: true, response, sources });
           })
-          .catch((error) =>
-            sendResponse({ ok: false, error: errorMessage(error) }),
+          .catch(() =>
+            sendResponse({
+              ok: false,
+              error:
+                "ApplyProof could not prepare this draft. Your answer was not changed.",
+            }),
           );
         return true;
       }

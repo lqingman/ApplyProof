@@ -22,7 +22,11 @@ type ProfileEditorProps = {
   onCancel: () => void;
   onResumeFileDelete: () => Promise<void>;
   onResumeFileReplace: (file: File) => Promise<void>;
-  onSave: (profile: CandidateProfile, importedResume?: File) => Promise<void>;
+  onSave: (
+    profile: CandidateProfile,
+    importedResume?: File,
+    importedResumeText?: string,
+  ) => Promise<void>;
 };
 
 type EducationDraft = {
@@ -275,6 +279,7 @@ export function ProfileEditor({
   const [importedResumeFile, setImportedResumeFile] = useState<File | null>(
     null,
   );
+  const [importedResumeText, setImportedResumeText] = useState<string>();
   const initialImportStarted = useRef(false);
   const replaceResumeInputRef = useRef<HTMLInputElement>(null);
   const resumeFileName = importedResumeFile?.name ?? savedResume?.name;
@@ -309,6 +314,7 @@ export function ProfileEditor({
       await onSave(
         profileFromDraft(draft, profile),
         importedResumeFile ?? undefined,
+        importedResumeText,
       );
     } catch (cause) {
       setError(
@@ -330,11 +336,18 @@ export function ProfileEditor({
       const resume = await importResumeFile(file);
       setDraft((current) => mergeResume(current, resume));
       setImportedResumeFile(file);
+      setImportedResumeText(resume.sourceText);
       setImportReviews(resume.reviews);
       const factCount = Object.entries(resume).filter(
         ([key, value]) =>
-          !["evidence", "education", "experience"].includes(key) &&
-          Boolean(value),
+          ![
+            "evidence",
+            "education",
+            "experience",
+            "reviews",
+            "notes",
+            "sourceText",
+          ].includes(key) && Boolean(value),
       ).length;
       setImportMessage(
         `Imported ${factCount} profile fields, ${resume.education.length} education entries, ${resume.experience.length} experience entries, and ${resume.evidence.length} evidence items from ${file.name}. ${resume.notes.at(-1) ?? "Extraction completed."} ${file.name} is not saved yet; Save My Profile to store it in My resume file. Review every field before saving.`,
@@ -361,6 +374,7 @@ export function ProfileEditor({
     try {
       await onResumeFileReplace(file);
       setImportedResumeFile(null);
+      setImportedResumeText(undefined);
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -414,6 +428,11 @@ export function ProfileEditor({
             </span>
             <div className="resume-file-details">
               <strong>{resumeFileName}</strong>
+              <span className="field-help">
+                {importedResumeText || savedResume?.textAvailable
+                  ? "Full extracted text is available locally for grounded answers and cover letters."
+                  : "Import this resume to make its full text available for grounded writing."}
+              </span>
               <div className="resume-file-actions">
                 <button
                   className="text-button"

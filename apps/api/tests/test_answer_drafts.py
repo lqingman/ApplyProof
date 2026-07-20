@@ -189,6 +189,30 @@ def test_additional_prompt_is_accepted_as_an_instruction() -> None:
     assert response.json()["draft"]
 
 
+def test_cover_letter_requires_job_description_and_resume_evidence() -> None:
+    body = request_body("cover_letter")
+    body["field"] = {
+        "id": "cover_letter",
+        "question": "Cover letter",
+        "maxCharacters": 20000,
+    }
+    body["evidence"] = request_body()["evidence"]
+
+    missing_description = post_draft(body).json()
+    assert missing_description["draft"] == ""
+    assert "job description" in missing_description["followUpQuestion"].lower()
+
+    body["job"]["description"] = (  # type: ignore[index]
+        "Build accessible products using React, TypeScript, and automated testing."
+    )
+    response = post_draft(body)
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["draft"].startswith("Dear Hiring Team")
+    assert payload["evidenceIds"] == ["project-campus-map"]
+
+
 def test_overlong_provider_draft_is_retried_with_the_live_limit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

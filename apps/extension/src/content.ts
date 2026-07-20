@@ -2,6 +2,7 @@ import { countBlockedFields, findField, scanDocument } from "./scanner";
 import { fillDocument } from "./pageFill";
 import { mountInlineAssistants } from "./inlineAssistant";
 import { attachResumeFile } from "./resumeAttachment";
+import { extractJobContext } from "./jobContext";
 import type { NormalizedField } from "@applyproof/shared-types";
 
 declare global {
@@ -71,6 +72,7 @@ if (!window.__applyProofScannerReady) {
         ok: true,
         fields: scanDocument(document),
         blockedCount: countBlockedFields(document),
+        job: extractJobContext(document),
       });
       return;
     }
@@ -103,6 +105,7 @@ if (!window.__applyProofScannerReady) {
         ok: true,
         mountedCount: mountInlineAssistants(document, fields, {
           generateBlankFields: message.generateBlankFields === true,
+          job: message.job,
         }),
       });
     }

@@ -10,10 +10,16 @@ const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 export async function generateAnswerDraft(
   request: AnswerDraftRequest,
 ): Promise<AnswerDraftResponse> {
+  const parsed = answerDraftRequestSchema.safeParse(request);
+  if (!parsed.success) {
+    throw new Error(
+      "ApplyProof could not prepare this draft. Your answer was not changed.",
+    );
+  }
   const response = await fetch(`${apiBaseUrl}/v1/answer-drafts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(answerDraftRequestSchema.parse(request)),
+    body: JSON.stringify(parsed.data),
   });
   if (!response.ok) {
     throw new Error("Drafting is unavailable. Your answer was not changed.");

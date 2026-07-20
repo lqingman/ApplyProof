@@ -4,11 +4,13 @@ export type SavedResumeMetadata = {
   size: number;
   lastModified: number;
   savedAt: string;
+  textAvailable?: boolean;
 };
 
 type SavedResumeRecord = SavedResumeMetadata & {
   id: "primary";
   data: ArrayBuffer;
+  extractedText?: string;
 };
 
 const databaseName = "applyproof-local-files";
@@ -78,7 +80,10 @@ async function readRecord(): Promise<SavedResumeRecord | null> {
   }
 }
 
-export async function saveResumeFile(file: File): Promise<SavedResumeMetadata> {
+export async function saveResumeFile(
+  file: File,
+  extractedText?: string,
+): Promise<SavedResumeMetadata> {
   validateResumeFile(file);
   const data = file.arrayBuffer
     ? await file.arrayBuffer()
@@ -98,11 +103,15 @@ export async function saveResumeFile(file: File): Promise<SavedResumeMetadata> {
     size: file.size,
     lastModified: file.lastModified,
     savedAt: new Date().toISOString(),
+    textAvailable: Boolean(extractedText?.trim()),
   };
   const record: SavedResumeRecord = {
     id: primaryResumeId,
     ...metadata,
     data,
+    ...(extractedText?.trim()
+      ? { extractedText: extractedText.trim().slice(0, 250_000) }
+      : {}),
   };
   const database = await openDatabase();
   try {
@@ -118,8 +127,15 @@ export async function saveResumeFile(file: File): Promise<SavedResumeMetadata> {
 export async function loadSavedResumeMetadata(): Promise<SavedResumeMetadata | null> {
   const record = await readRecord();
   if (!record) return null;
-  const { name, type, size, lastModified, savedAt } = record;
-  return { name, type, size, lastModified, savedAt };
+  const { name, type, size, lastModified, savedAt, extractedText } = record;
+  return {
+    name,
+    type,
+    size,
+    lastModified,
+    savedAt,
+    textAvailable: Boolean(extractedText),
+  };
 }
 
 export async function loadSavedResumeFile(): Promise<File | null> {
@@ -129,6 +145,11 @@ export async function loadSavedResumeFile(): Promise<File | null> {
     type: record.type,
     lastModified: record.lastModified,
   });
+}
+
+export async function loadSavedResumeText(): Promise<string | null> {
+  const record = await readRecord();
+  return record?.extractedText?.trim() || null;
 }
 
 export async function deleteSavedResumeFile() {

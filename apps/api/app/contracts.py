@@ -18,6 +18,7 @@ class JobContext(ApiModel):
     company: str = Field(min_length=1, max_length=200)
     role: str = Field(min_length=1, max_length=200)
     requirements: list[str] = Field(max_length=20)
+    description: str | None = Field(default=None, min_length=1, max_length=12000)
 
 
 class EvidenceRecord(ApiModel):

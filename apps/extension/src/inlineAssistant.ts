@@ -1,16 +1,25 @@
 import type {
   AnswerDraftResponse,
   NormalizedField,
+  PageJobContext,
 } from "@applyproof/shared-types";
 
 import { findField, readCharacterLimit } from "./scanner";
 
 type OpenField = HTMLTextAreaElement | HTMLInputElement | HTMLElement;
 type Cleanup = () => void;
-type MountOptions = { generateBlankFields?: boolean };
+type MountOptions = {
+  generateBlankFields?: boolean;
+  job?: PageJobContext;
+};
 
 const hostAttribute = "data-applyproof-inline-assistant";
 let cleanups: Cleanup[] = [];
+const coverLetterPattern = /\bcover[- ]?letter\b/i;
+
+function isCoverLetterField(field: Pick<NormalizedField, "id" | "label">) {
+  return coverLetterPattern.test(`${field.id} ${field.label}`);
+}
 
 const assistantStyles = `
   :host { display: block; height: 0; position: relative; z-index: 2147483646; }
@@ -42,18 +51,19 @@ const assistantStyles = `
     background: rgba(255, 255, 255, .98);
     box-shadow: 0 8px 22px rgba(23, 67, 47, .15);
   }
-  input {
+  textarea {
     flex: 1 1 auto;
     min-width: 0;
-    height: 32px;
-    padding: 0 8px;
+    height: 48px;
+    padding: 8px;
     border: 0;
     outline: none;
+    resize: vertical;
     color: #23372d;
     background: transparent;
     font: inherit;
   }
-  input::placeholder { color: #829087; }
+  textarea::placeholder { color: #829087; }
   button {
     display: grid;
     flex: 0 0 32px;
@@ -152,13 +162,18 @@ function notifyDraftFilled(fieldId: string, value: string) {
 async function requestDraft(
   field: NormalizedField,
   additionalPrompt: string,
+  options: Pick<MountOptions, "job"> & { manualJobDescription?: string },
 ): Promise<{ response: AnswerDraftResponse; sources: string[] }> {
   if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage)
     throw new Error("Open the ApplyProof side panel and scan this page again.");
   const result: unknown = await chrome.runtime.sendMessage({
     type: "APPLYPROOF_GENERATE_INLINE_DRAFT",
     field,
-    additionalPrompt,
+    ...(additionalPrompt ? { additionalPrompt } : {}),
+    ...(options.manualJobDescription
+      ? { manualJobDescription: options.manualJobDescription }
+      : {}),
+    ...(options.job ? { job: options.job } : {}),
   });
   const payload = result as {
     ok?: boolean;
@@ -180,6 +195,8 @@ function mountOne(
 ) {
   const element = findField(document, field.id);
   if (!element || !isOpenQuestion(field, element)) return;
+  const coverLetter = isCoverLetterField(field);
+  const hasPageJobDescription = Boolean(options.job?.description?.trim());
 
   const host = document.createElement("span");
   host.setAttribute(hostAttribute, field.id);
@@ -194,12 +211,19 @@ function mountOne(
   );
   panel.innerHTML = `
     <div class="toolbar">
-      <input
-        type="text"
-        maxlength="1000"
-        aria-label="Extra instruction for regenerated answer"
-        placeholder="Add an instruction (optional)"
-      />
+      <textarea
+        maxlength="${coverLetter && !hasPageJobDescription ? "12000" : "1000"}"
+        aria-label="${
+          coverLetter && !hasPageJobDescription
+            ? "Job description for cover letter"
+            : "Extra instruction for regenerated answer"
+        }"
+        placeholder="${
+          coverLetter && !hasPageJobDescription
+            ? "Paste the job description to generate a cover letter"
+            : "Add an instruction (optional)"
+        }"
+      ></textarea>
       <button type="button">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M20 11a8 8 0 1 0-2.34 5.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -212,7 +236,7 @@ function mountOne(
   shadow.append(style, panel);
   element.insertAdjacentElement("afterend", host);
 
-  const prompt = panel.querySelector("input");
+  const prompt = panel.querySelector("textarea");
   const button = panel.querySelector("button");
   const status = panel.querySelector<HTMLElement>(".status");
   if (!prompt || !button || !status) return;
@@ -259,6 +283,14 @@ function mountOne(
       ? "Regenerating from verified profile evidence…"
       : "Generating from verified profile evidence…";
     try {
+      const manualJobDescription =
+        coverLetter && !hasPageJobDescription ? prompt.value.trim() : undefined;
+      if (coverLetter && !hasPageJobDescription && !manualJobDescription) {
+        status.classList.add("error");
+        status.textContent =
+          "Paste the job description here before generating this cover letter.";
+        return;
+      }
       const liveLimit =
         readCharacterLimit(element, document) ?? field.maxLength;
       const currentField = liveLimit
@@ -266,7 +298,8 @@ function mountOne(
         : field;
       const { response, sources } = await requestDraft(
         currentField,
-        prompt.value,
+        manualJobDescription ? "" : prompt.value.trim(),
+        { job: options.job, manualJobDescription },
       );
       if (!response.draft) {
         status.classList.add("error");
@@ -282,12 +315,10 @@ function mountOne(
         ? `Answer added · Evidence: ${[...new Set(sources)].join(", ")}`
         : "Answer added. Review it before submitting.";
       notifyDraftFilled(field.id, response.draft);
-    } catch (error) {
+    } catch {
       status.classList.add("error");
       status.textContent =
-        error instanceof Error
-          ? error.message
-          : "ApplyProof could not generate this answer.";
+        "ApplyProof could not generate this answer. Your existing answer was not changed.";
     } finally {
       button.disabled = false;
       delete button.dataset.loading;
@@ -298,8 +329,16 @@ function mountOne(
 
   // The first Scan & Autofill should complete blank open questions, while
   // preserving any answer already present on the application page.
-  if (options.generateBlankFields && !readValue(element).trim()) {
+  if (
+    options.generateBlankFields &&
+    !readValue(element).trim() &&
+    (!coverLetter || hasPageJobDescription)
+  ) {
     window.setTimeout(() => button.click(), 0);
+  } else if (coverLetter && !hasPageJobDescription) {
+    status.classList.add("error");
+    status.textContent =
+      "Job description not found on this page. Paste it here to generate a grounded cover letter.";
   }
 
   cleanups.push(() => {

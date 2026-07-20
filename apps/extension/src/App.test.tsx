@@ -27,6 +27,7 @@ import {
   deleteSavedResumeFile,
   loadSavedResumeFile,
   loadSavedResumeMetadata,
+  loadSavedResumeText,
   saveResumeFile,
 } from "./resumeFileStorage";
 
@@ -102,6 +103,7 @@ vi.mock("./resumeFileStorage", () => ({
   deleteSavedResumeFile: vi.fn(),
   loadSavedResumeFile: vi.fn(),
   loadSavedResumeMetadata: vi.fn(),
+  loadSavedResumeText: vi.fn(),
   saveResumeFile: vi.fn(),
 }));
 
@@ -112,6 +114,7 @@ describe("profile-first autofill workflow", () => {
     vi.mocked(loadRememberedAnswers).mockResolvedValue([]);
     vi.mocked(loadSavedResumeMetadata).mockResolvedValue(null);
     vi.mocked(loadSavedResumeFile).mockResolvedValue(null);
+    vi.mocked(loadSavedResumeText).mockResolvedValue(null);
     vi.mocked(saveMyProfile).mockImplementation(async (profile) => profile);
     vi.mocked(resetMyProfile).mockResolvedValue(undefined);
     vi.mocked(deleteSavedResumeFile).mockResolvedValue(undefined);
@@ -250,6 +253,7 @@ describe("profile-first autofill workflow", () => {
     await waitFor(() =>
       expect(enableInlineAssistants).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ id: "project" })]),
+        undefined,
       ),
     );
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -280,6 +284,9 @@ describe("profile-first autofill workflow", () => {
       fitsLimit: true,
     });
     vi.mocked(loadMyProfile).mockResolvedValue(mayaProfile);
+    vi.mocked(loadSavedResumeText).mockResolvedValue(
+      "PROJECTS\nBuilt a React accessibility dashboard with automated tests.",
+    );
     render(<App />);
     fireEvent.click(
       await screen.findByRole("button", { name: "Edit profile" }),
@@ -305,6 +312,11 @@ describe("profile-first autofill workflow", () => {
             options: [],
           },
           additionalPrompt: "Use my campus map project",
+          job: {
+            company: "Example Labs",
+            role: "Frontend Engineer",
+            description: "Build accessible React products.",
+          },
         },
         {},
         sendResponse,
@@ -314,6 +326,16 @@ describe("profile-first autofill workflow", () => {
       expect(generateAnswerDraft).toHaveBeenCalledWith(
         expect.objectContaining({
           additionalPrompt: "Use my campus map project",
+          job: expect.objectContaining({
+            company: "Example Labs",
+            role: "Frontend Engineer",
+          }),
+          evidence: expect.arrayContaining([
+            expect.objectContaining({
+              text: "Built a React accessibility dashboard with automated tests.",
+              source: "Saved resume · PROJECTS",
+            }),
+          ]),
         }),
       ),
     );
@@ -543,6 +565,7 @@ describe("profile-first autofill workflow", () => {
       evidence: [],
       reviews: [],
       notes: ["AI extraction completed."],
+      sourceText: "PROJECTS\nBuilt an accessibility dashboard.",
     });
     render(<App />);
     fireEvent.click(
@@ -559,7 +582,12 @@ describe("profile-first autofill workflow", () => {
     expect(saveResumeFile).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Save My Profile" }));
 
-    await waitFor(() => expect(saveResumeFile).toHaveBeenCalledWith(file));
+    await waitFor(() =>
+      expect(saveResumeFile).toHaveBeenCalledWith(
+        file,
+        "PROJECTS\nBuilt an accessibility dashboard.",
+      ),
+    );
     expect(screen.queryByText("updated.pdf")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Edit profile" }));
     expect(await screen.findByText("updated.pdf")).toBeInTheDocument();

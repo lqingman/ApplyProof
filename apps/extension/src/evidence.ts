@@ -3,6 +3,7 @@ import type {
   CandidateProfile,
   EvidenceRecord,
   NormalizedField,
+  PageJobContext,
 } from "@applyproof/shared-types";
 
 export const northstarJob = {
@@ -18,6 +19,67 @@ const strategies: Record<string, string[]> = {
 };
 
 const aiWorkflowPattern = /\b(?:ai|artificial intelligence|copilot|llm)\b/i;
+const answerCharacterLimit = 20_000;
+
+type DraftBuildOptions = {
+  additionalPrompt?: string;
+  job?: PageJobContext;
+  manualJobDescription?: string;
+  resumeText?: string;
+};
+
+const resumeSectionPattern =
+  /^(summary|profile|experience|work experience|professional experience|employment|education|projects?|skills?|certifications?|awards?|volunteering)$/i;
+
+function resumeCategory(section: string): EvidenceRecord["category"] {
+  if (/project/i.test(section)) return "project";
+  if (/experience|employment/i.test(section)) return "experience";
+  if (/education/i.test(section)) return "education";
+  if (/skills?/i.test(section)) return "skill";
+  return "profile";
+}
+
+export function evidenceFromResumeText(
+  resumeText: string | undefined,
+  query: string,
+) {
+  if (!resumeText?.trim()) return [];
+  let section = "Resume";
+  const records: EvidenceRecord[] = [];
+  for (const rawLine of resumeText.replace(/\r/g, "").split("\n")) {
+    const line = rawLine.replace(/\s+/g, " ").trim();
+    if (!line) continue;
+    if (resumeSectionPattern.test(line)) {
+      section = line;
+      continue;
+    }
+    if (
+      line.length < 20 ||
+      /^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(line) ||
+      /^(?:https?:\/\/|www\.)/i.test(line)
+    )
+      continue;
+    records.push({
+      id: `resume-source-${records.length + 1}`,
+      category: resumeCategory(section),
+      text: line.slice(0, 2000),
+      source: `Saved resume · ${section}`.slice(0, 300),
+    });
+    if (records.length >= 80) break;
+  }
+  const words = new Set(query.toLowerCase().match(/[a-z]{3,}/g) ?? []);
+  return records
+    .map((record, index) => ({
+      record,
+      index,
+      score: (record.text.toLowerCase().match(/[a-z]{3,}/g) ?? []).filter(
+        (word) => words.has(word),
+      ).length,
+    }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, 12)
+    .map(({ record }) => record);
+}
 
 export function selectEvidence(
   profile: CandidateProfile,
@@ -70,17 +132,45 @@ export function selectEvidence(
 export function buildDraftRequest(
   profile: CandidateProfile,
   field: NormalizedField,
-  additionalPrompt?: string,
+  input?: string | DraftBuildOptions,
 ): AnswerDraftRequest {
-  const instruction = additionalPrompt?.trim();
+  const options: DraftBuildOptions =
+    typeof input === "string" ? { additionalPrompt: input } : (input ?? {});
+  const instruction = options.additionalPrompt?.trim();
+  const manualDescription = options.manualJobDescription?.trim();
+  const pageJob = options.job;
+  const description = manualDescription || pageJob?.description;
+  const job =
+    pageJob || manualDescription
+      ? {
+          company: pageJob?.company ?? "the hiring company",
+          role: pageJob?.role ?? "this role",
+          requirements: [],
+          ...(description ? { description: description.slice(0, 12000) } : {}),
+        }
+      : northstarJob;
+  const profileEvidence = selectEvidence(profile, field, instruction);
+  const resumeEvidence = evidenceFromResumeText(
+    options.resumeText,
+    `${field.label} ${description ?? ""}`,
+  );
+  const evidence = [...profileEvidence, ...resumeEvidence]
+    .filter(
+      (record, index, all) =>
+        all.findIndex((candidate) => candidate.text === record.text) === index,
+    )
+    .slice(0, 20);
+  const maxCharacters = field.maxLength
+    ? Math.min(field.maxLength, answerCharacterLimit)
+    : undefined;
   return {
     field: {
       id: field.id,
       question: field.label,
-      ...(field.maxLength ? { maxCharacters: field.maxLength } : {}),
+      ...(maxCharacters ? { maxCharacters } : {}),
     },
-    job: northstarJob,
-    evidence: selectEvidence(profile, field, instruction),
+    job,
+    evidence,
     ...(instruction ? { additionalPrompt: instruction } : {}),
   };
 }

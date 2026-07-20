@@ -5,6 +5,7 @@ import {
   deleteSavedResumeFile,
   loadSavedResumeFile,
   loadSavedResumeMetadata,
+  loadSavedResumeText,
   saveResumeFile,
 } from "./resumeFileStorage";
 
@@ -59,6 +60,26 @@ describe("local original resume storage", () => {
     });
     await deleteSavedResumeFile();
     await expect(loadSavedResumeMetadata()).resolves.toBeNull();
+  });
+
+  it("stores extracted text locally for grounded answers", async () => {
+    const file = new File(["binary"], "projects.pdf", {
+      type: "application/pdf",
+    });
+    await saveResumeFile(
+      file,
+      "PROJECTS\nBuilt an accessibility dashboard in React.",
+    );
+
+    await expect(loadSavedResumeText()).resolves.toBe(
+      "PROJECTS\nBuilt an accessibility dashboard in React.",
+    );
+    await expect(loadSavedResumeMetadata()).resolves.toMatchObject({
+      textAvailable: true,
+    });
+
+    await saveResumeFile(new File(["new"], "replacement.pdf"));
+    await expect(loadSavedResumeText()).resolves.toBeNull();
   });
 
   it("rejects unsupported and oversized files", async () => {

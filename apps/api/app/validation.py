@@ -52,7 +52,9 @@ def validate_draft(request: AnswerDraftRequest, candidate: ProviderDraft) -> Ans
         return empty_response(request, "The generated draft used a different company name.")
 
     evidence_text = " ".join(record.text for record in request.evidence)
-    support_text = f"{evidence_text} {' '.join(request.job.requirements)}"
+    support_text = (
+        f"{evidence_text} {' '.join(request.job.requirements)} {request.job.description or ''}"
+    )
     if LEADERSHIP_PATTERN.search(draft) and not LEADERSHIP_PATTERN.search(evidence_text):
         return empty_response(request, "The draft included an unsupported leadership claim.")
     unsupported_numbers = set(NUMBER_PATTERN.findall(draft)) - set(
@@ -66,10 +68,7 @@ def validate_draft(request: AnswerDraftRequest, candidate: ProviderDraft) -> Ans
         return empty_response(request, "The draft included a technology absent from the evidence.")
 
     count = len(draft)
-    fits_characters = (
-        request.field.max_characters is None
-        or count <= request.field.max_characters
-    )
+    fits_characters = request.field.max_characters is None or count <= request.field.max_characters
     if not fits_characters:
         return empty_response(request, "The generated draft exceeded this field's character limit.")
     return AnswerDraftResponse(

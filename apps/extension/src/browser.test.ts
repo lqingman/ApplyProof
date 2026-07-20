@@ -131,12 +131,18 @@ describe("extension browser bridge", () => {
       },
     ];
 
-    await expect(enableInlineAssistants(fields)).resolves.toBe(1);
+    const job = {
+      company: "Example Labs",
+      role: "Frontend Engineer",
+      description: "Build accessible products.",
+    };
+    await expect(enableInlineAssistants(fields, job)).resolves.toBe(1);
     expect(sendMessage).toHaveBeenLastCalledWith(
       42,
       expect.objectContaining({
         type: "APPLYPROOF_ENABLE_INLINE_ASSISTANTS",
         fields,
+        job,
         generateBlankFields: true,
       }),
     );

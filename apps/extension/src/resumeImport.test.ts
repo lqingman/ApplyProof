@@ -81,6 +81,7 @@ describe("resume file import", () => {
       firstName: "Jordan",
       lastName: "Lee",
       email: "jordan@example.com",
+      sourceText: expect.stringContaining("Jordan Lee"),
     });
     expect(extractResumeWithAi).toHaveBeenCalledWith(
       expect.stringContaining("Jordan Lee"),
@@ -101,6 +102,7 @@ describe("resume file import", () => {
       lastName: "Lee",
       email: "jordan@example.com",
       location: "Vancouver, BC",
+      sourceText: expect.stringContaining("Software Developer"),
     });
     expect(destroy).toHaveBeenCalledOnce();
   });

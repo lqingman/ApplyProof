@@ -37,9 +37,17 @@ export type NormalizedField = z.infer<typeof normalizedFieldSchema>;
 export const pageScanSchema = z.object({
   fields: z.array(normalizedFieldSchema),
   blockedCount: z.number().int().nonnegative().default(0),
+  job: z
+    .object({
+      company: z.string().trim().min(1).max(200).optional(),
+      role: z.string().trim().min(1).max(200).optional(),
+      description: z.string().trim().min(1).max(12000).optional(),
+    })
+    .optional(),
 });
 
 export type PageScan = z.infer<typeof pageScanSchema>;
+export type PageJobContext = NonNullable<PageScan["job"]>;
 
 export const fieldFillSchema = z.object({
   fieldId: z.string().min(1),
@@ -298,6 +306,7 @@ export const answerDraftJobSchema = z.object({
   company: z.string().trim().min(1).max(200),
   role: z.string().trim().min(1).max(200),
   requirements: z.array(z.string().trim().min(1).max(200)).max(20),
+  description: z.string().trim().min(1).max(12000).optional(),
 });
 
 export const answerDraftRequestSchema = z

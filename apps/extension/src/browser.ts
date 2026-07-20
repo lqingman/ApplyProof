@@ -5,6 +5,7 @@ import {
   type FillResult,
   type PageScan,
   type NormalizedField,
+  type PageJobContext,
 } from "@applyproof/shared-types";
 
 async function activeTab() {
@@ -67,12 +68,16 @@ export async function fillActivePage(
   return pageFillResultSchema.parse(response).results;
 }
 
-export async function enableInlineAssistants(fields: NormalizedField[]) {
+export async function enableInlineAssistants(
+  fields: NormalizedField[],
+  job?: PageJobContext,
+) {
   const tabId = await activeTab();
   await ensureScanner(tabId);
   const response: unknown = await chrome.tabs.sendMessage(tabId, {
     type: "APPLYPROOF_ENABLE_INLINE_ASSISTANTS",
     fields,
+    job,
     generateBlankFields: true,
   });
   if (!(response as { ok?: boolean })?.ok)
