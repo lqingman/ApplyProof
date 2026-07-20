@@ -80,18 +80,18 @@ No account, personal resume, production deployment, or automatic submission is r
 - [x] Profile selection, summary, and inspection UI
 - [x] Combined Scan & Autofill primary action that requires a selected profile
 - [x] Rule-based field classification for known demo fields
-- [x] Deterministic mappings for identity, contact, education, links, location, relocation, availability, work authorization, and gender
+- [x] Deterministic mappings for identity, contact, education dates, links, location, relocation, availability, separate authorization/sponsorship, and voluntary self-identification
 - [x] Real checkbox selection for the accuracy confirmation
 - [x] Existing-value protection
-- [x] Work authorization and gender sourced from explicit profile choices rather than inference
+- [x] Work authorization and voluntary self-identification sourced from explicit profile choices rather than inference
 - [x] Compact side panel containing profile, Scan & Autofill, and progress only
 - [x] Removal of the superseded outcome summary, review queue, and field inventory
 
 ### Acceptance criteria
 
-- [x] Name, email, phone, school, degree, graduation date, GitHub URL, and location map correctly.
+- [x] Name, email, phone, school, education start/graduation dates, GitHub URL, and location map correctly.
 - [x] Non-empty fields are not overwritten without confirmation.
-- [x] Saved work authorization and gender choices autofill correctly.
+- [x] Saved authorization, sponsorship, and supported voluntary choices autofill correctly.
 - [x] Accuracy confirmation is checked through the real DOM property and framework events.
 - [x] Filling occurs only after a user action.
 - [x] Autofill cannot run until the user selects a profile.
@@ -156,9 +156,9 @@ These items build on the stable controlled prototype and must be completed befor
 - [x] Keep “Load Maya demo data” as a demo seeding action, not a second selectable profile
 - [x] Add Word (`.docx`) and PDF resume import with editable extraction results
 - [x] Support separate LinkedIn and portfolio links, multiple education entries, and work experience
-- [x] Require explicit work-authorization and gender choices during profile setup, including `Prefer not to say`
+- [x] Store authorization and sponsorship as two explicit answers; keep demographic answers optional with `Prefer not to say`
 - [ ] Separate stable profile facts from reusable application preferences
-- [x] Store reusable answers under canonical keys such as `work_authorization.canada`
+- [x] Store reusable answers under scoped canonical keys such as `work_authorization.canada.authorized` and `.sponsorship`
 - [x] Record the answer source, confirmation time, and applicable country or scope
 - [x] Reuse a saved answer only when the new question maps to the same canonical meaning with high confidence
 - [ ] Re-review time-dependent preferences such as start date, salary, and relocation when context changes

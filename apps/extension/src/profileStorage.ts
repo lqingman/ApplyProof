@@ -8,15 +8,11 @@ import {
 const PROFILE_STORAGE_KEY = "applyproof.myProfile.v1";
 const ANSWERS_STORAGE_KEY = "applyproof.reusableAnswers.v1";
 
-const authorizationLabels: Record<
-  CandidateProfile["workAuthorization"]["canada"],
-  string
-> = {
-  authorized: "Authorized to work in Canada",
-  requires_sponsorship: "Require sponsorship now or in the future",
-  prefer_discuss: "Prefer to discuss",
+const choiceLabels = {
+  yes: "Yes",
+  no: "No",
   decline: "Prefer not to say",
-};
+} as const;
 
 type LocalStorageArea = Pick<
   chrome.storage.StorageArea,
@@ -46,24 +42,42 @@ export async function loadMyProfile(): Promise<CandidateProfile | null> {
 export async function saveMyProfile(profile: CandidateProfile) {
   const validated = candidateProfileSchema.parse(profile);
   const existingAnswers = await loadRememberedAnswers();
-  const prior = existingAnswers.find(
-    (answer) => answer.canonicalKey === "work_authorization.canada",
+  const authorizationChoices = [
+    {
+      canonicalKey: "work_authorization.canada.authorized",
+      choice: validated.workAuthorization.canada.authorized,
+    },
+    {
+      canonicalKey: "work_authorization.canada.sponsorship",
+      choice: validated.workAuthorization.canada.sponsorship,
+    },
+  ];
+  const authorizationAnswers: RememberedAnswer[] = authorizationChoices.map(
+    ({ canonicalKey, choice }) => {
+      const value = choiceLabels[choice];
+      const prior = existingAnswers.find(
+        (answer) => answer.canonicalKey === canonicalKey,
+      );
+      return {
+        canonicalKey,
+        value,
+        source: "explicit_profile_choice",
+        confirmedAt:
+          prior?.value === value ? prior.confirmedAt : new Date().toISOString(),
+        scope: { country: "CA" },
+        timeDependent: false,
+      };
+    },
   );
-  const value = authorizationLabels[validated.workAuthorization.canada];
-  const authorizationAnswer: RememberedAnswer = {
-    canonicalKey: "work_authorization.canada",
-    value,
-    source: "explicit_profile_choice",
-    confirmedAt:
-      prior?.value === value ? prior.confirmedAt : new Date().toISOString(),
-    scope: { country: "CA" },
-    timeDependent: false,
-  };
+  const authorizationKeys = new Set([
+    "work_authorization.canada",
+    ...authorizationAnswers.map((answer) => answer.canonicalKey),
+  ]);
   const rememberedAnswers = rememberedAnswersSchema.parse([
     ...existingAnswers.filter(
-      (answer) => answer.canonicalKey !== authorizationAnswer.canonicalKey,
+      (answer) => !authorizationKeys.has(answer.canonicalKey),
     ),
-    authorizationAnswer,
+    ...authorizationAnswers,
   ]);
   await localStorageArea().set({
     [PROFILE_STORAGE_KEY]: validated,

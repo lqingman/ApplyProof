@@ -79,8 +79,8 @@ describe("shared contracts", () => {
   it("validates canonical, scoped reusable answers", () => {
     expect(
       rememberedAnswerSchema.parse({
-        canonicalKey: "work_authorization.canada",
-        value: "Authorized to work in Canada",
+        canonicalKey: "work_authorization.canada.authorized",
+        value: "Yes",
         source: "explicit_profile_choice",
         confirmedAt: "2026-07-19T20:00:00.000Z",
         scope: { country: "CA" },

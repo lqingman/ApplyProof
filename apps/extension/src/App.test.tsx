@@ -39,11 +39,19 @@ vi.mock("./browser", () => ({
       },
       {
         id: "work-authorization",
-        label: "Work authorization",
+        label: "Are you legally authorized to work in Canada?",
         kind: "select",
         required: true,
         value: "",
-        options: ["Authorized"],
+        options: ["Yes", "No"],
+      },
+      {
+        id: "sponsorship",
+        label: "Will you require sponsorship now or in the future?",
+        kind: "select",
+        required: true,
+        value: "",
+        options: ["Yes", "No"],
       },
       {
         id: "gender",
@@ -66,6 +74,7 @@ vi.mock("./browser", () => ({
   fillActivePage: vi.fn().mockResolvedValue([
     { fieldId: "email", status: "filled" },
     { fieldId: "work-authorization", status: "filled" },
+    { fieldId: "sponsorship", status: "filled" },
     { fieldId: "gender", status: "filled" },
     { fieldId: "accuracyConfirmation", status: "filled" },
   ]),
@@ -115,6 +124,20 @@ describe("profile-first autofill workflow", () => {
     expect(screen.getByText("Saved")).toBeInTheDocument();
   });
 
+  it("starts a blank profile directly from the From scratch action", async () => {
+    render(<App />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "From scratch" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Create profile" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("First name")).toHaveValue("");
+    expect(importResumeFile).not.toHaveBeenCalled();
+  });
+
   it("keeps the completed workflow compact after autofill", async () => {
     render(<App />);
 
@@ -140,9 +163,10 @@ describe("profile-first autofill workflow", () => {
       expect.arrayContaining([
         {
           fieldId: "work-authorization",
-          value: "Authorized to work in Canada",
+          value: "Yes",
         },
-        { fieldId: "gender", value: "woman" },
+        { fieldId: "sponsorship", value: "No" },
+        { fieldId: "gender", value: "Woman" },
         { fieldId: "accuracyConfirmation", value: "true" },
       ]),
     );
@@ -294,11 +318,13 @@ describe("profile-first autofill workflow", () => {
         {
           school: "University of British Columbia",
           degree: "BSc Computer Science",
+          startDate: "2022-09-01",
           graduationDate: "2026-05-01",
         },
         {
           school: "Langara College",
           degree: "Diploma in Web Development",
+          startDate: "2021-09-01",
           graduationDate: "2023-05-01",
         },
       ],
@@ -315,19 +341,18 @@ describe("profile-first autofill workflow", () => {
     });
     render(<App />);
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Create My Profile" }),
-    );
     const file = new File(["docx bytes"], "jordan-resume.docx", {
       type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
-    fireEvent.change(screen.getByLabelText("Choose Word or PDF resume"), {
+    fireEvent.click(await screen.findByRole("button", { name: "From resume" }));
+    fireEvent.change(screen.getByLabelText("Resume file"), {
       target: { files: [file] },
     });
 
     await waitFor(() =>
       expect(screen.getByLabelText("Email")).toHaveValue("jordan@example.com"),
     );
+    expect(importResumeFile).toHaveBeenCalledWith(file);
     expect(screen.getByLabelText("First name")).toHaveValue("Jordan");
     expect(screen.queryByLabelText("Headline")).not.toBeInTheDocument();
     expect(screen.getByLabelText("LinkedIn URL")).toHaveValue(
@@ -335,6 +360,7 @@ describe("profile-first autofill workflow", () => {
     );
     expect(screen.getAllByLabelText("School")).toHaveLength(2);
     expect(screen.getAllByLabelText("Degree or program")).toHaveLength(2);
+    expect(screen.getAllByLabelText("Start date")[0]).toHaveValue("2022-09-01");
     expect(screen.getByLabelText("Job title")).toHaveValue(
       "Software Developer",
     );
@@ -342,9 +368,14 @@ describe("profile-first autofill workflow", () => {
     expect(screen.getByLabelText("One verified fact per line")).toHaveValue(
       "Built a tested TypeScript application.",
     );
-    expect(screen.getByLabelText("Canadian work authorization")).toHaveValue(
-      "",
-    );
+    expect(
+      screen.getByLabelText("Are you legally authorized to work in Canada?"),
+    ).toHaveValue("");
+    expect(
+      screen.getByLabelText(
+        "Will you now or in the future require employment sponsorship?",
+      ),
+    ).toHaveValue("");
     expect(
       screen.getByText(/Review every field before saving/),
     ).toHaveTextContent("Review every field before saving");
@@ -360,7 +391,7 @@ describe("profile-first autofill workflow", () => {
 
     await waitFor(() => expect(resetMyProfile).toHaveBeenCalledOnce());
     expect(
-      screen.getByRole("button", { name: "Create My Profile" }),
+      screen.getByRole("button", { name: "From scratch" }),
     ).toBeInTheDocument();
   });
 

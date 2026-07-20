@@ -12,14 +12,36 @@ export type FieldDecision = {
   value?: string;
 };
 
-function profileValue(profile: CandidateProfile, fieldId: string) {
+const yesNoLabels = {
+  yes: "Yes",
+  no: "No",
+  decline: "Prefer not to say",
+} as const;
+
+const genderLabels = {
+  woman: "Woman",
+  man: "Man",
+  nonbinary: "Non-binary",
+  self_describe: "Self-describe",
+  decline: "Prefer not to say",
+} as const;
+
+const raceLabels = {
+  asian: "Asian",
+  black: "Black or African American",
+  hispanic_latino: "Hispanic or Latino",
+  indigenous: "American Indian or Alaska Native",
+  middle_eastern_north_african: "Middle Eastern or North African",
+  pacific_islander: "Native Hawaiian or Other Pacific Islander",
+  white: "White",
+  multiracial: "Two or more races",
+  self_describe: "Self-describe",
+  decline: "Prefer not to say",
+} as const;
+
+function profileValue(profile: CandidateProfile, field: NormalizedField) {
   const primaryEducation = profile.education[0];
-  const workAuthorization = {
-    authorized: "Authorized to work in Canada",
-    requires_sponsorship: "Require sponsorship now or in the future",
-    prefer_discuss: "Prefer to discuss",
-    decline: "Prefer not to say",
-  } as const;
+  const { id, label } = field;
   const values: Record<string, string | undefined> = {
     "first-name": profile.identity.firstName,
     "last-name": profile.identity.lastName,
@@ -30,14 +52,68 @@ function profileValue(profile: CandidateProfile, fieldId: string) {
     linkedin: profile.links.linkedin,
     school: primaryEducation?.school,
     degree: primaryEducation?.degree,
+    "education-start-date": primaryEducation?.startDate,
     "graduation-date": primaryEducation?.graduationDate,
     "start-date": profile.availability.startDate,
     relocation: profile.availability.relocation,
-    "work-authorization": workAuthorization[profile.workAuthorization.canada],
-    gender: profile.demographics.genderIdentity,
     accuracyConfirmation: "true",
   };
-  return values[fieldId];
+  if (values[id] !== undefined) return values[id];
+
+  const fingerprint = `${id} ${label}`;
+  const authorization = profile.workAuthorization.canada;
+  if (
+    id === "work-authorization" ||
+    (/\bcanad(?:a|ian)\b/i.test(fingerprint) &&
+      /\b(?:authori[sz](?:ed|ation)|legally eligible|eligible to work)\b/i.test(
+        fingerprint,
+      ) &&
+      !/sponsor/i.test(fingerprint))
+  ) {
+    return yesNoLabels[authorization.authorized];
+  }
+  if (
+    id === "sponsorship" ||
+    (/\bcanad(?:a|ian)\b/i.test(fingerprint) &&
+      /\bsponsor(?:ship)?\b/i.test(fingerprint))
+  ) {
+    return yesNoLabels[authorization.sponsorship];
+  }
+
+  const demographics = profile.demographics;
+  if (/\bgender\b/i.test(fingerprint) && demographics.genderIdentity) {
+    return demographics.genderIdentity === "self_describe"
+      ? undefined
+      : genderLabels[demographics.genderIdentity];
+  }
+  if (
+    /\b(?:race|ethnicity|ethnic)\b/i.test(fingerprint) &&
+    demographics.raceEthnicity
+  ) {
+    return demographics.raceEthnicity === "self_describe"
+      ? undefined
+      : raceLabels[demographics.raceEthnicity];
+  }
+  if (/\bdisabilit/i.test(fingerprint) && demographics.disabilityStatus) {
+    return yesNoLabels[demographics.disabilityStatus];
+  }
+  if (
+    /\b(?:lgbtq|sexual orientation)\b/i.test(fingerprint) &&
+    demographics.lgbtqIdentity
+  ) {
+    return yesNoLabels[demographics.lgbtqIdentity];
+  }
+  if (
+    /\b(?:veteran|military service)\b/i.test(fingerprint) &&
+    demographics.veteranStatus
+  ) {
+    return demographics.veteranStatus === "yes"
+      ? "Veteran"
+      : demographics.veteranStatus === "no"
+        ? "Not a veteran"
+        : "Prefer not to say";
+  }
+  return undefined;
 }
 
 function reviewReason(field: NormalizedField) {
@@ -54,11 +130,14 @@ function rememberedValue(field: NormalizedField, answers: RememberedAnswer[]) {
       fingerprint,
     );
   if (!isCanadianAuthorization) return undefined;
+  const canonicalKey = /\bsponsorship\b/i.test(fingerprint)
+    ? "work_authorization.canada.sponsorship"
+    : "work_authorization.canada.authorized";
   const answer = answers.find(
-    (answer) =>
-      answer.canonicalKey === "work_authorization.canada" &&
-      answer.scope.country === "CA" &&
-      !answer.timeDependent,
+    (item) =>
+      item.canonicalKey === canonicalKey &&
+      item.scope.country === "CA" &&
+      !item.timeDependent,
   );
   if (!answer) return undefined;
 
@@ -73,15 +152,10 @@ function rememberedValue(field: NormalizedField, answers: RememberedAnswer[]) {
         (candidate) => item.trim().toLowerCase() === candidate.toLowerCase(),
       ),
     );
-  if (/\bsponsorship\b/i.test(field.label)) {
-    if (answer.value === "Authorized to work in Canada")
-      return option("No", "No sponsorship required");
-    if (answer.value === "Require sponsorship now or in the future")
-      return option("Yes", "Sponsorship required");
-  }
-  if (answer.value === "Authorized to work in Canada")
-    return option("Yes", "I am authorized");
-  return undefined;
+  if (answer.value === "Yes") return option("Yes", "I am authorized") ?? "Yes";
+  if (answer.value === "No")
+    return option("No", "No sponsorship required") ?? "No";
+  return option("Prefer not to say", "Decline to answer") ?? answer.value;
 }
 
 export function planAutofill(
@@ -91,8 +165,7 @@ export function planAutofill(
 ) {
   const decisions: FieldDecision[] = fields.map((field) => {
     const value =
-      profileValue(profile, field.id) ??
-      rememberedValue(field, rememberedAnswers);
+      profileValue(profile, field) ?? rememberedValue(field, rememberedAnswers);
     if (value !== undefined) {
       if (field.value.trim()) {
         return {

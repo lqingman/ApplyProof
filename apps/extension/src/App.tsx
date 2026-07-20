@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { mayaProfile } from "@applyproof/sample-data";
 import type {
   CandidateProfile,
@@ -24,12 +24,6 @@ import {
 } from "./profileStorage";
 
 type WorkflowStatus = "idle" | "working" | "complete" | "error";
-const genderLabels = {
-  woman: "Woman",
-  man: "Man",
-  nonbinary: "Non-binary",
-  decline: "Prefer not to say",
-} as const;
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -58,11 +52,13 @@ export function App() {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [initialResumeFile, setInitialResumeFile] = useState<File | null>(null);
   const [rememberedAnswers, setRememberedAnswers] = useState<
     RememberedAnswer[]
   >([]);
   const [status, setStatus] = useState<WorkflowStatus>("idle");
   const [message, setMessage] = useState("Loading My Profile…");
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void Promise.all([loadMyProfile(), loadRememberedAnswers()])
@@ -72,7 +68,7 @@ export function App() {
         setMessage(
           saved
             ? "My Profile is ready for safe autofill."
-            : "Create My Profile or load Maya demo data to begin.",
+            : "Start My Profile from a resume or from scratch.",
         );
       })
       .catch((error) => {
@@ -88,6 +84,7 @@ export function App() {
     setProfile(saved);
     setRememberedAnswers(answers);
     setEditingProfile(false);
+    setInitialResumeFile(null);
     setStatus("idle");
     setMessage("My Profile was saved locally and is ready for autofill.");
   }
@@ -100,6 +97,7 @@ export function App() {
       setProfile(saved);
       setRememberedAnswers(answers);
       setEditingProfile(false);
+      setInitialResumeFile(null);
       setStatus("idle");
       setMessage("Maya demo data was loaded into My Profile.");
     } catch (error) {
@@ -114,6 +112,7 @@ export function App() {
       setProfile(null);
       setRememberedAnswers([]);
       setEditingProfile(false);
+      setInitialResumeFile(null);
       setStatus("idle");
       setMessage("Local profile data was deleted from this browser.");
     } catch (error) {
@@ -202,7 +201,11 @@ export function App() {
         {editingProfile ? (
           <ProfileEditor
             profile={profile}
-            onCancel={() => setEditingProfile(false)}
+            initialResumeFile={initialResumeFile}
+            onCancel={() => {
+              setEditingProfile(false);
+              setInitialResumeFile(null);
+            }}
             onSave={handleProfileSave}
           />
         ) : profile ? (
@@ -226,14 +229,11 @@ export function App() {
               )}
               <span>{profile.education.length} education entries</span>
               <span>{profile.experience.length} experience entries</span>
-              {profile.workAuthorization?.canada === "authorized" && (
-                <span>Authorized to work in Canada</span>
-              )}
-              {profile.demographics?.genderIdentity && (
-                <span>
-                  Gender: {genderLabels[profile.demographics.genderIdentity]}
-                </span>
-              )}
+              <span>Work authorization answers saved</span>
+              <span>
+                {Object.values(profile.demographics).filter(Boolean).length}{" "}
+                voluntary answers saved
+              </span>
               <span>{profile.evidence.length} evidence records</span>
             </div>
             <details className="profile-details">
@@ -248,7 +248,10 @@ export function App() {
               <button
                 className="text-button"
                 type="button"
-                onClick={() => setEditingProfile(true)}
+                onClick={() => {
+                  setInitialResumeFile(null);
+                  setEditingProfile(true);
+                }}
               >
                 Edit profile
               </button>
@@ -273,14 +276,42 @@ export function App() {
                 <p>Saved only in this browser.</p>
               </div>
             </div>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => setEditingProfile(true)}
-              disabled={profileLoading}
-            >
-              Create My Profile
-            </button>
+            <div className="profile-creation-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => resumeInputRef.current?.click()}
+                disabled={profileLoading}
+              >
+                From resume
+              </button>
+              <input
+                ref={resumeInputRef}
+                aria-label="Resume file"
+                type="file"
+                accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                disabled={profileLoading}
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  setInitialResumeFile(file);
+                  setEditingProfile(true);
+                }}
+              />
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  setInitialResumeFile(null);
+                  setEditingProfile(true);
+                }}
+                disabled={profileLoading}
+              >
+                From scratch
+              </button>
+            </div>
             <button
               className="text-button demo-seed-button"
               type="button"

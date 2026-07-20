@@ -41,7 +41,7 @@ This checklist summarizes the requirements relevant to ApplyProof. The official 
 ### Recommended video allocation
 
 - **0:00–0:20 — Problem and promise:** generic autofill is fast, but generated applications can become inaccurate; ApplyProof makes claims inspectable.
-- **0:20–1:55 — Working demo:** load Maya data into `My Profile`, run Scan & Autofill, show authorization/gender/confirmation filled, review auto-generated answers on the page, add a project instruction, regenerate, and show a character limit being respected.
+- **0:20–1:55 — Working demo:** load Maya data into `My Profile`, run Scan & Autofill, show separate eligibility/sponsorship, voluntary answers, and confirmation filled, review auto-generated answers on the page, add a project instruction, regenerate, and show a character limit being respected.
 - **1:55–2:25 — Codex collaboration:** show short planning and implementation artifacts; explain how GPT-5.6 helped synthesize the roadmap and how Codex accelerated code, tests, and debugging.
 - **2:25–2:50 — Technical design and impact:** deterministic mappings, inline Shadow DOM assistance, strict structured model outputs, live limit enforcement, and why page-native review is different.
 - **2:50–2:58 — Closing:** “ApplyProof helps applicants move faster without losing control of the truth.”
@@ -69,7 +69,7 @@ Leave a small timing buffer rather than targeting exactly three minutes.
 - [ ] Verify no API keys, tokens, private prompts, or personal information are committed.
 - [ ] Confirm the OpenRouter API key is read only by the FastAPI backend and never appears in the extension bundle, browser messages, logs, or demo recording.
 - [ ] Confirm fixture mode completes the grounded-answer demo without an API key.
-- [ ] Confirm Scan & Autofill fills saved profile values, authorization, gender, and the accuracy checkbox.
+- [ ] Confirm Scan & Autofill fills saved profile values, separate eligibility/sponsorship answers, supported voluntary answers, and the accuracy checkbox.
 - [ ] Confirm blank open-ended fields generate directly on the page and existing answers are preserved.
 - [ ] Confirm hover/focus reveals the optional instruction and Regenerate control.
 - [ ] Confirm native, helper-text, and live character limits are passed to generation and an over-limit result is retried once.

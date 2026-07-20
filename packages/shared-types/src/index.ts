@@ -69,6 +69,7 @@ export const educationRecordSchema = z.object({
   id: z.string().min(1),
   school: z.string().min(1),
   degree: z.string().min(1),
+  startDate: z.string().min(1).optional(),
   graduationDate: z.string().min(1).optional(),
 });
 
@@ -107,15 +108,32 @@ const currentCandidateProfileSchema = z.object({
     relocation: z.enum(["yes", "no"]),
   }),
   workAuthorization: z.object({
-    canada: z.enum([
-      "authorized",
-      "requires_sponsorship",
-      "prefer_discuss",
-      "decline",
-    ]),
+    canada: z.object({
+      authorized: z.enum(["yes", "no", "decline"]),
+      sponsorship: z.enum(["yes", "no", "decline"]),
+    }),
   }),
   demographics: z.object({
-    genderIdentity: z.enum(["woman", "man", "nonbinary", "decline"]),
+    genderIdentity: z
+      .enum(["woman", "man", "nonbinary", "self_describe", "decline"])
+      .optional(),
+    raceEthnicity: z
+      .enum([
+        "asian",
+        "black",
+        "hispanic_latino",
+        "indigenous",
+        "middle_eastern_north_african",
+        "pacific_islander",
+        "white",
+        "multiracial",
+        "self_describe",
+        "decline",
+      ])
+      .optional(),
+    disabilityStatus: z.enum(["yes", "no", "decline"]).optional(),
+    lgbtqIdentity: z.enum(["yes", "no", "decline"]).optional(),
+    veteranStatus: z.enum(["yes", "no", "decline"]).optional(),
   }),
   evidence: z.array(evidenceRecordSchema),
 });
@@ -124,14 +142,39 @@ export const candidateProfileSchema = z.preprocess((value) => {
   if (!value || typeof value !== "object") return value;
   const candidate = value as Record<string, unknown>;
   const education = candidate.education;
+  const authorization = candidate.workAuthorization as
+    { canada?: unknown } | undefined;
+  const legacyCanada = authorization?.canada;
+  const migratedAuthorization =
+    typeof legacyCanada === "string"
+      ? {
+          canada: {
+            authorized:
+              legacyCanada === "authorized" ||
+              legacyCanada === "requires_sponsorship"
+                ? "yes"
+                : legacyCanada === "decline" ||
+                    legacyCanada === "prefer_discuss"
+                  ? "decline"
+                  : "no",
+            sponsorship:
+              legacyCanada === "requires_sponsorship"
+                ? "yes"
+                : legacyCanada === "authorized"
+                  ? "no"
+                  : "decline",
+          },
+        }
+      : candidate.workAuthorization;
   if (education && typeof education === "object" && !Array.isArray(education)) {
     return {
       ...candidate,
       education: [{ id: "education-1", ...education }],
       experience: candidate.experience ?? [],
+      workAuthorization: migratedAuthorization,
     };
   }
-  return value;
+  return { ...candidate, workAuthorization: migratedAuthorization };
 }, currentCandidateProfileSchema);
 
 export type CandidateProfile = z.infer<typeof candidateProfileSchema>;

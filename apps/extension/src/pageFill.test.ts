@@ -12,6 +12,15 @@ describe("safe page filling", () => {
         <label><input type="radio" name="relocation" value="no">No</label>
       </fieldset>
       <label><input type="checkbox" name="accuracyConfirmation"> Confirm accuracy</label>
+      <fieldset><legend>Race or ethnicity</legend>
+        <label><input type="radio" name="race" value="194">Asian</label>
+        <label><input type="radio" name="race" value="195">White</label>
+      </fieldset>
+      <label>Disability status<select id="disability">
+        <option value="">Choose</option>
+        <option value="201">Yes, I have a disability</option>
+        <option value="202">No, I do not have a disability</option>
+      </select></label>
     `;
   });
 
@@ -47,5 +56,23 @@ describe("safe page filling", () => {
     expect(document.querySelector<HTMLInputElement>("#school")?.value).toBe(
       "Already entered",
     );
+  });
+
+  it("matches visible option labels when ATS values are opaque IDs", () => {
+    expect(
+      fillDocument(document, [
+        { fieldId: "race", value: "Asian" },
+        { fieldId: "disability", value: "No" },
+      ]),
+    ).toEqual([
+      { fieldId: "race", status: "filled" },
+      { fieldId: "disability", status: "filled" },
+    ]);
+    expect(
+      document.querySelector<HTMLInputElement>('input[value="194"]'),
+    ).toBeChecked();
+    expect(
+      document.querySelector<HTMLSelectElement>("#disability")?.value,
+    ).toBe("202");
   });
 });

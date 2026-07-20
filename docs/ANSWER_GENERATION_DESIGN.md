@@ -20,7 +20,7 @@ The extension may fill fields and check mapped checkboxes after the user clicks 
 4. A user instruction may select a resume project, emphasis, or tone. It is an instruction, not evidence for a new factual claim.
 5. The user reviews and edits the generated text in the application field itself.
 6. The side panel contains only profile selection, Scan & Autofill, and compact progress text. It does not duplicate an outcome summary, review queue, or field inventory.
-7. Work authorization and gender identity are reusable profile values. A valid profile must contain explicit selections, including `Prefer not to say` when chosen.
+7. Canadian work eligibility and sponsorship are separate required profile choices. Voluntary self-identification answers are optional; every stored value is explicit and may be `Prefer not to say`.
 8. The accuracy-confirmation checkbox is checked during autofill. Navigation and submission remain manual.
 9. Existing page values are preserved during deterministic autofill. Regeneration replaces an open-ended answer only after the user explicitly clicks Regenerate.
 10. Provider keys remain on the FastAPI server.
@@ -63,11 +63,13 @@ Current Northstar mappings include:
 - identity and contact fields;
 - education and portfolio fields;
 - start date and relocation preference;
-- `work-authorization` from `profile.workAuthorization.canada`;
+- `work-authorization` from `profile.workAuthorization.canada.authorized`;
+- `sponsorship` from `profile.workAuthorization.canada.sponsorship`;
 - `gender` from `profile.demographics.genderIdentity`;
+- supported race/ethnicity, disability, LGBTQ+, and veteran questions from their explicit demographic values;
 - `accuracyConfirmation`, checked after the user initiates autofill.
 
-Profile schemas require a work-authorization choice and a gender choice. The gender value may be `woman`, `man`, `nonbinary`, or `decline`. ApplyProof does not infer either answer from a name or resume.
+Profile schemas require separate work-eligibility and sponsorship choices. Gender, race/ethnicity, disability, LGBTQ+, and veteran or military-service values are optional. ApplyProof does not infer any of these answers from a name, identity field, or resume, and self-described responses remain manual.
 
 Checkbox filling sets the real DOM `checked` property and dispatches `input` and `change` events so React and ATS forms observe the update.
 

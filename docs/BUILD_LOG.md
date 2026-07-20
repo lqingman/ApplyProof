@@ -239,6 +239,20 @@ The scanner now recognizes native `maxlength`, common custom data attributes, `a
 
 **Artifacts:** shared profile contracts; Maya fixture; extension profile editor, parser, PDF import, autofill, styles, and tests; `README.md`; and `docs/ROADMAP.md`.
 
+### 2026-07-19 — Align profile setup with common ATS questions
+
+**Goal:** make profile creation more direct and model education, work authorization, and voluntary self-identification as the separate questions applicants commonly encounter.
+
+**Human decision:** defer OCR; replace the extra create-then-import step with direct `From resume` and `From scratch` entry points; add education start dates; split Canadian legal work eligibility from current-or-future sponsorship; and group optional gender, race/ethnicity, disability, LGBTQ+, and veteran or military-service choices without inferring them.
+
+**Codex contribution:** reviewed Greenhouse's official Job Board field model, including separate education start/end dates and optional configurable compliance/demographic questions; migrated legacy combined authorization values; expanded the profile editor and Northstar fixture; added semantic mappings for supported questions; and taught page filling to match visible ATS option labels even when underlying values are opaque IDs.
+
+**Why GPT-5.6 helped:** the change required coordinating applicant UX, sensitive-data boundaries, legacy migration, country-scoped answer memory, ATS option semantics, resume extraction, deterministic filling, and test fixtures rather than adding isolated form controls.
+
+**Verification:** automated tests cover direct resume entry, education start dates, separate eligibility and sponsorship, optional voluntary fields, legacy migration, semantic demographic mapping, opaque ATS option values, country scoping, and the expanded Northstar workflow. Full repository verification and production builds pass before completion.
+
+**Artifacts:** shared profile contracts; extension profile editor, storage, parser, autofill, page filling, and tests; Northstar demo form; sample data; `README.md`; roadmap, answer design, submission checklist, and build log.
+
 ## Entry template
 
 Copy this section for the next milestone:

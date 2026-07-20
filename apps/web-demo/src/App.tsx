@@ -136,6 +136,14 @@ export function App() {
                   <input id="degree" name="degree" required />
                 </label>
                 <label>
+                  Education start date
+                  <input
+                    id="education-start-date"
+                    name="educationStartDate"
+                    type="date"
+                  />
+                </label>
+                <label>
                   Graduation date
                   <input
                     id="graduation-date"
@@ -148,7 +156,8 @@ export function App() {
                   <input id="start-date" name="startDate" type="date" />
                 </label>
                 <label>
-                  Work authorization <b aria-hidden="true">*</b>
+                  Are you legally authorized to work in Canada?{" "}
+                  <b aria-hidden="true">*</b>
                   <select
                     id="work-authorization"
                     name="workAuthorization"
@@ -158,9 +167,26 @@ export function App() {
                     <option value="" disabled>
                       Select an option
                     </option>
-                    <option>Authorized to work in Canada</option>
-                    <option>Require sponsorship now or in the future</option>
-                    <option>Prefer to discuss</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                    <option>Prefer not to say</option>
+                  </select>
+                </label>
+                <label>
+                  Will you now or in the future require employment sponsorship?{" "}
+                  <b aria-hidden="true">*</b>
+                  <select
+                    id="sponsorship"
+                    name="sponsorship"
+                    defaultValue=""
+                    required
+                  >
+                    <option value="" disabled>
+                      Select an option
+                    </option>
+                    <option>Yes</option>
+                    <option>No</option>
+                    <option>Prefer not to say</option>
                   </select>
                 </label>
                 <fieldset>
@@ -258,6 +284,71 @@ export function App() {
                   <label>
                     <input type="radio" name="gender" value="decline" /> Prefer
                     not to say
+                  </label>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Race or ethnicity</legend>
+                <div className="choice-stack">
+                  <label>
+                    <input type="radio" name="race" value="asian" /> Asian
+                  </label>
+                  <label>
+                    <input type="radio" name="race" value="black" /> Black or
+                    African American
+                  </label>
+                  <label>
+                    <input type="radio" name="race" value="white" /> White
+                  </label>
+                  <label>
+                    <input type="radio" name="race" value="decline" /> Prefer
+                    not to say
+                  </label>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Disability status</legend>
+                <div className="choice-stack">
+                  <label>
+                    <input type="radio" name="disability" value="yes" /> Yes
+                  </label>
+                  <label>
+                    <input type="radio" name="disability" value="no" /> No
+                  </label>
+                  <label>
+                    <input type="radio" name="disability" value="decline" />
+                    Prefer not to say
+                  </label>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Do you identify as LGBTQ+?</legend>
+                <div className="choice-stack">
+                  <label>
+                    <input type="radio" name="lgbtq" value="yes" /> Yes
+                  </label>
+                  <label>
+                    <input type="radio" name="lgbtq" value="no" /> No
+                  </label>
+                  <label>
+                    <input type="radio" name="lgbtq" value="decline" /> Prefer
+                    not to say
+                  </label>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Veteran or military service status</legend>
+                <div className="choice-stack">
+                  <label>
+                    <input type="radio" name="veteran" value="yes" /> Veteran
+                  </label>
+                  <label>
+                    <input type="radio" name="veteran" value="no" /> Not a
+                    veteran
+                  </label>
+                  <label>
+                    <input type="radio" name="veteran" value="decline" />
+                    Prefer not to say
                   </label>
                 </div>
               </fieldset>

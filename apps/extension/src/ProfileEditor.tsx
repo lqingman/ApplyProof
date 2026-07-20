@@ -1,4 +1,10 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import {
   candidateProfileSchema,
   type CandidateProfile,
@@ -9,6 +15,7 @@ import type { ParsedResume } from "./resumeTextParser";
 
 type ProfileEditorProps = {
   profile: CandidateProfile | null;
+  initialResumeFile?: File | null;
   onCancel: () => void;
   onSave: (profile: CandidateProfile) => Promise<void>;
 };
@@ -17,6 +24,7 @@ type EducationDraft = {
   id: string;
   school: string;
   degree: string;
+  startDate: string;
   graduationDate: string;
 };
 
@@ -42,8 +50,15 @@ type ProfileDraft = {
   experience: ExperienceDraft[];
   startDate: string;
   relocation: "" | "yes" | "no";
-  workAuthorization: "" | CandidateProfile["workAuthorization"]["canada"];
+  workAuthorized:
+    "" | CandidateProfile["workAuthorization"]["canada"]["authorized"];
+  sponsorship:
+    "" | CandidateProfile["workAuthorization"]["canada"]["sponsorship"];
   genderIdentity: "" | CandidateProfile["demographics"]["genderIdentity"];
+  raceEthnicity: "" | CandidateProfile["demographics"]["raceEthnicity"];
+  disabilityStatus: "" | CandidateProfile["demographics"]["disabilityStatus"];
+  lgbtqIdentity: "" | CandidateProfile["demographics"]["lgbtqIdentity"];
+  veteranStatus: "" | CandidateProfile["demographics"]["veteranStatus"];
   evidenceText: string;
 };
 
@@ -58,6 +73,7 @@ function blankEducation(): EducationDraft {
     id: entryId("education"),
     school: "",
     degree: "",
+    startDate: "",
     graduationDate: "",
   };
 }
@@ -85,6 +101,7 @@ function draftFrom(profile: CandidateProfile | null): ProfileDraft {
     linkedin: profile?.links.linkedin ?? "",
     education: profile?.education.map((entry) => ({
       ...entry,
+      startDate: entry.startDate ?? "",
       graduationDate: entry.graduationDate ?? "",
     })) ?? [blankEducation()],
     experience:
@@ -97,8 +114,13 @@ function draftFrom(profile: CandidateProfile | null): ProfileDraft {
       })) ?? [],
     startDate: profile?.availability.startDate ?? "",
     relocation: profile?.availability.relocation ?? "",
-    workAuthorization: profile?.workAuthorization.canada ?? "",
+    workAuthorized: profile?.workAuthorization.canada.authorized ?? "",
+    sponsorship: profile?.workAuthorization.canada.sponsorship ?? "",
     genderIdentity: profile?.demographics.genderIdentity ?? "",
+    raceEthnicity: profile?.demographics.raceEthnicity ?? "",
+    disabilityStatus: profile?.demographics.disabilityStatus ?? "",
+    lgbtqIdentity: profile?.demographics.lgbtqIdentity ?? "",
+    veteranStatus: profile?.demographics.veteranStatus ?? "",
     evidenceText:
       profile?.evidence.map((record) => record.text).join("\n") ?? "",
   };
@@ -146,6 +168,7 @@ function profileFromDraft(
       id: entry.id,
       school: entry.school.trim(),
       degree: entry.degree.trim(),
+      ...(entry.startDate ? { startDate: entry.startDate } : {}),
       ...(entry.graduationDate ? { graduationDate: entry.graduationDate } : {}),
     })),
     experience: draft.experience.map((entry) => ({
@@ -163,8 +186,21 @@ function profileFromDraft(
       startDate: draft.startDate,
       relocation: draft.relocation,
     },
-    workAuthorization: { canada: draft.workAuthorization },
-    demographics: { genderIdentity: draft.genderIdentity },
+    workAuthorization: {
+      canada: {
+        authorized: draft.workAuthorized,
+        sponsorship: draft.sponsorship,
+      },
+    },
+    demographics: {
+      ...(draft.genderIdentity ? { genderIdentity: draft.genderIdentity } : {}),
+      ...(draft.raceEthnicity ? { raceEthnicity: draft.raceEthnicity } : {}),
+      ...(draft.disabilityStatus
+        ? { disabilityStatus: draft.disabilityStatus }
+        : {}),
+      ...(draft.lgbtqIdentity ? { lgbtqIdentity: draft.lgbtqIdentity } : {}),
+      ...(draft.veteranStatus ? { veteranStatus: draft.veteranStatus } : {}),
+    },
     evidence: evidenceFrom(draft.evidenceText, existing?.evidence ?? []),
   });
 }
@@ -188,6 +224,7 @@ function mergeResume(draft: ProfileDraft, resume: ParsedResume): ProfileDraft {
       id: entryId("education"),
       school: entry.school,
       degree: entry.degree,
+      startDate: entry.startDate ?? "",
       graduationDate: entry.graduationDate ?? "",
     }));
   const importedExperience = resume.experience
@@ -235,6 +272,7 @@ function mergeResume(draft: ProfileDraft, resume: ParsedResume): ProfileDraft {
 
 export function ProfileEditor({
   profile,
+  initialResumeFile,
   onCancel,
   onSave,
 }: ProfileEditorProps) {
@@ -243,6 +281,7 @@ export function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const initialImportStarted = useRef(false);
 
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -282,10 +321,7 @@ export function ProfileEditor({
     }
   }
 
-  async function handleResumeImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+  async function importResume(file: File) {
     setError("");
     setImportMessage("");
     setImporting(true);
@@ -311,6 +347,18 @@ export function ProfileEditor({
       setImporting(false);
     }
   }
+
+  function handleResumeImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void importResume(file);
+  }
+
+  useEffect(() => {
+    if (!initialResumeFile || initialImportStarted.current) return;
+    initialImportStarted.current = true;
+    void importResume(initialResumeFile);
+  }, [initialResumeFile]);
 
   return (
     <form className="profile-editor" onSubmit={submit}>
@@ -468,16 +516,30 @@ export function ProfileEditor({
                 }
               />
             </label>
-            <label>
-              Graduation date
-              <input
-                type="date"
-                value={entry.graduationDate}
-                onChange={(event) =>
-                  setEducation(entry.id, { graduationDate: event.target.value })
-                }
-              />
-            </label>
+            <div className="field-grid two-columns">
+              <label>
+                Start date
+                <input
+                  type="date"
+                  value={entry.startDate}
+                  onChange={(event) =>
+                    setEducation(entry.id, { startDate: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Graduation date
+                <input
+                  type="date"
+                  value={entry.graduationDate}
+                  onChange={(event) =>
+                    setEducation(entry.id, {
+                      graduationDate: event.target.value,
+                    })
+                  }
+                />
+              </label>
+            </div>
           </div>
         ))}
       </fieldset>
@@ -617,34 +679,59 @@ export function ProfileEditor({
       </fieldset>
 
       <fieldset>
-        <legend>Explicit application choices</legend>
+        <legend>Work authorization</legend>
         <p className="field-help">
-          ApplyProof saves these choices; it never infers them from your resume.
+          These are two separate questions on most applications. ApplyProof
+          saves your explicit answers and never infers them from your resume.
         </p>
         <label>
-          Canadian work authorization
+          Are you legally authorized to work in Canada?
           <select
             required
-            value={draft.workAuthorization}
+            value={draft.workAuthorized}
             onChange={(event) =>
               set(
-                "workAuthorization",
-                event.target.value as ProfileDraft["workAuthorization"],
+                "workAuthorized",
+                event.target.value as ProfileDraft["workAuthorized"],
               )
             }
           >
             <option value="">Choose an answer</option>
-            <option value="authorized">Authorized to work in Canada</option>
-            <option value="requires_sponsorship">
-              Require sponsorship now or in the future
-            </option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
             <option value="decline">Prefer not to say</option>
           </select>
         </label>
         <label>
-          Gender identity
+          Will you now or in the future require employment sponsorship?
           <select
             required
+            value={draft.sponsorship}
+            onChange={(event) =>
+              set(
+                "sponsorship",
+                event.target.value as ProfileDraft["sponsorship"],
+              )
+            }
+          >
+            <option value="">Choose an answer</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="decline">Prefer not to say</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Voluntary self-identification</legend>
+        <p className="field-help">
+          These optional questions vary by employer. Save only what you want to
+          reuse; ApplyProof never derives these answers from your resume or
+          identity.
+        </p>
+        <label>
+          Gender identity
+          <select
             value={draft.genderIdentity}
             onChange={(event) =>
               set(
@@ -653,10 +740,90 @@ export function ProfileEditor({
               )
             }
           >
-            <option value="">Choose an answer</option>
+            <option value="">Not saved</option>
             <option value="woman">Woman</option>
             <option value="man">Man</option>
             <option value="nonbinary">Non-binary</option>
+            <option value="self_describe">Self-describe on application</option>
+            <option value="decline">Prefer not to say</option>
+          </select>
+        </label>
+        <label>
+          Race or ethnicity
+          <select
+            value={draft.raceEthnicity}
+            onChange={(event) =>
+              set(
+                "raceEthnicity",
+                event.target.value as ProfileDraft["raceEthnicity"],
+              )
+            }
+          >
+            <option value="">Not saved</option>
+            <option value="asian">Asian</option>
+            <option value="black">Black or African American</option>
+            <option value="hispanic_latino">Hispanic or Latino/a/x</option>
+            <option value="indigenous">Indigenous or Native American</option>
+            <option value="middle_eastern_north_african">
+              Middle Eastern or North African
+            </option>
+            <option value="pacific_islander">
+              Native Hawaiian or Pacific Islander
+            </option>
+            <option value="white">White</option>
+            <option value="multiracial">Two or more races</option>
+            <option value="self_describe">Self-describe on application</option>
+            <option value="decline">Prefer not to say</option>
+          </select>
+        </label>
+        <label>
+          Disability status
+          <select
+            value={draft.disabilityStatus}
+            onChange={(event) =>
+              set(
+                "disabilityStatus",
+                event.target.value as ProfileDraft["disabilityStatus"],
+              )
+            }
+          >
+            <option value="">Not saved</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="decline">Prefer not to say</option>
+          </select>
+        </label>
+        <label>
+          Do you identify as LGBTQ+?
+          <select
+            value={draft.lgbtqIdentity}
+            onChange={(event) =>
+              set(
+                "lgbtqIdentity",
+                event.target.value as ProfileDraft["lgbtqIdentity"],
+              )
+            }
+          >
+            <option value="">Not saved</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="decline">Prefer not to say</option>
+          </select>
+        </label>
+        <label>
+          Veteran or military service status
+          <select
+            value={draft.veteranStatus}
+            onChange={(event) =>
+              set(
+                "veteranStatus",
+                event.target.value as ProfileDraft["veteranStatus"],
+              )
+            }
+          >
+            <option value="">Not saved</option>
+            <option value="yes">Veteran or military service</option>
+            <option value="no">Not a veteran</option>
             <option value="decline">Prefer not to say</option>
           </select>
         </label>

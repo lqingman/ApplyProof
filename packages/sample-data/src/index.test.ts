@@ -16,7 +16,10 @@ describe("Maya Chen demo profile", () => {
   });
 
   it("stores user-confirmed authorization and demographic profile values", () => {
-    expect(mayaProfile.workAuthorization?.canada).toBe("authorized");
+    expect(mayaProfile.workAuthorization.canada).toEqual({
+      authorized: "yes",
+      sponsorship: "no",
+    });
     expect(mayaProfile.demographics?.genderIdentity).toBe("woman");
   });
 });

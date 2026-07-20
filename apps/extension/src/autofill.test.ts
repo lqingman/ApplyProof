@@ -25,14 +25,17 @@ describe("safe autofill planning", () => {
       field("first-name"),
       field("email", { kind: "email" }),
       field("school"),
+      field("education-start-date", { kind: "date" }),
       field("graduation-date", { kind: "date" }),
       field("relocation", { kind: "radio", options: ["Yes", "No"] }),
       field("work-authorization", {
         kind: "select",
-        options: [
-          "Authorized to work in Canada",
-          "Require sponsorship now or in the future",
-        ],
+        options: ["Yes", "No"],
+      }),
+      field("sponsorship", {
+        label: "Will you now or in the future require sponsorship?",
+        kind: "select",
+        options: ["Yes", "No"],
       }),
       field("gender", {
         kind: "radio",
@@ -45,13 +48,15 @@ describe("safe autofill planning", () => {
       { fieldId: "first-name", value: "Maya" },
       { fieldId: "email", value: "maya.chen@example.com" },
       { fieldId: "school", value: "University of British Columbia" },
+      { fieldId: "education-start-date", value: "2022-09-01" },
       { fieldId: "graduation-date", value: "2026-05-15" },
       { fieldId: "relocation", value: "yes" },
       {
         fieldId: "work-authorization",
-        value: "Authorized to work in Canada",
+        value: "Yes",
       },
-      { fieldId: "gender", value: "woman" },
+      { fieldId: "sponsorship", value: "No" },
+      { fieldId: "gender", value: "Woman" },
       { fieldId: "accuracyConfirmation", value: "true" },
     ]);
   });
@@ -82,13 +87,44 @@ describe("safe autofill planning", () => {
       field("gender", { kind: "radio" }),
     ]);
 
-    expect(fills).toEqual([{ fieldId: "gender", value: "decline" }]);
+    expect(fills).toEqual([{ fieldId: "gender", value: "Prefer not to say" }]);
+  });
+
+  it("maps explicitly saved voluntary answers by question meaning", () => {
+    const { fills } = planAutofill(mayaProfile, [
+      field("question-101", {
+        label: "Race or ethnicity",
+        kind: "radio",
+        options: ["Asian", "Black or African American", "White"],
+      }),
+      field("question-102", {
+        label: "Disability status",
+        kind: "select",
+        options: ["Yes", "No", "Prefer not to say"],
+      }),
+      field("question-103", {
+        label: "Veteran or military service status",
+        kind: "radio",
+        options: ["Veteran", "Not a veteran", "Prefer not to say"],
+      }),
+    ]);
+
+    expect(fills).toEqual([
+      { fieldId: "question-101", value: "Asian" },
+      { fieldId: "question-102", value: "No" },
+      { fieldId: "question-103", value: "Not a veteran" },
+    ]);
   });
 
   it("autofills an explicit prefer-not-to-say authorization choice", () => {
     const profile = {
       ...mayaProfile,
-      workAuthorization: { canada: "decline" as const },
+      workAuthorization: {
+        canada: {
+          authorized: "decline" as const,
+          sponsorship: "decline" as const,
+        },
+      },
     };
     const { fills } = planAutofill(profile, [
       field("work-authorization", { kind: "select" }),
@@ -102,8 +138,8 @@ describe("safe autofill planning", () => {
   it("reuses a scoped answer only for a high-confidence equivalent question", () => {
     const remembered = [
       {
-        canonicalKey: "work_authorization.canada",
-        value: "Authorized to work in Canada",
+        canonicalKey: "work_authorization.canada.authorized",
+        value: "Yes",
         source: "explicit_profile_choice" as const,
         confirmedAt: "2026-07-19T20:00:00.000Z",
         scope: { country: "CA" },
@@ -126,11 +162,6 @@ describe("safe autofill planning", () => {
       remembered,
     );
 
-    expect(fills).toEqual([
-      {
-        fieldId: "eligibility-question",
-        value: "Yes",
-      },
-    ]);
+    expect(fills).toEqual([{ fieldId: "eligibility-question", value: "Yes" }]);
   });
 });

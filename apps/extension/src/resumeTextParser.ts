@@ -1,6 +1,7 @@
 export type ParsedEducation = {
   school: string;
   degree: string;
+  startDate?: string;
   graduationDate?: string;
 };
 
@@ -85,7 +86,7 @@ function likelyName(lines: string[]) {
 
 function parseMonthYear(value: string) {
   const match = value.match(
-    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})\b/i,
+    /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(20\d{2})\b/i,
   );
   if (!match) return undefined;
   const months = [
@@ -102,7 +103,10 @@ function parseMonthYear(value: string) {
     "november",
     "december",
   ];
-  return `${match[2]}-${String(months.indexOf(match[1].toLowerCase()) + 1).padStart(2, "0")}-01`;
+  const monthIndex = months.findIndex((month) =>
+    month.startsWith(match[1].toLowerCase().slice(0, 3)),
+  );
+  return `${match[2]}-${String(monthIndex + 1).padStart(2, "0")}-01`;
 }
 
 function sectionLines(lines: string[], heading: RegExp) {
@@ -139,10 +143,18 @@ function parseEducation(lines: string[]): ParsedEducation[] {
         ),
       );
       if (!degree) return undefined;
-      const graduationDate = nearby.map(parseMonthYear).find(Boolean);
+      const range = nearby.find((line) => dateRangePattern.test(line));
+      const dates = range ? splitDateRange(range) : {};
+      const startDate = dates.startDate
+        ? parseMonthYear(dates.startDate)
+        : undefined;
+      const graduationDate = dates.endDate
+        ? parseMonthYear(dates.endDate)
+        : nearby.map(parseMonthYear).find(Boolean);
       return {
         school: candidates[index],
         degree,
+        ...(startDate ? { startDate } : {}),
         ...(graduationDate ? { graduationDate } : {}),
       };
     })

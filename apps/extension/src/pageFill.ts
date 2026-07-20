@@ -2,6 +2,19 @@ import type { FieldFill, FillResult } from "@applyproof/shared-types";
 
 import { findField } from "./scanner";
 
+function optionMatches(option: string, requested: string) {
+  const candidate = option.trim().toLowerCase();
+  const value = requested.trim().toLowerCase();
+  if (candidate === value) return true;
+  if (value === "yes") return /^yes\b/.test(candidate);
+  if (value === "no") return /^no\b/.test(candidate);
+  if (value === "prefer not to say")
+    return /prefer not|decline|do not wish|don't wish/.test(candidate);
+  if (value === "woman") return /^(?:woman|female)$/.test(candidate);
+  if (value === "man") return /^(?:man|male)$/.test(candidate);
+  return false;
+}
+
 function setNativeValue(
   element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
   value: string,
@@ -30,7 +43,14 @@ function fillOne(document: Document, fill: FieldFill): FillResult {
     if (group.some((radio) => radio.checked))
       return { fieldId: fill.fieldId, status: "skipped_existing" };
     const target = group.find(
-      (radio) => radio.value.toLowerCase() === fill.value.toLowerCase(),
+      (radio) =>
+        optionMatches(radio.value, fill.value) ||
+        optionMatches(
+          radio.labels?.[0]?.textContent ??
+            radio.parentElement?.textContent ??
+            "",
+          fill.value,
+        ),
     );
     if (!target) return { fieldId: fill.fieldId, status: "unsupported_option" };
     target.checked = true;
@@ -58,8 +78,8 @@ function fillOne(document: Document, fill: FieldFill): FillResult {
     if (element instanceof HTMLSelectElement) {
       const option = Array.from(element.options).find(
         (item) =>
-          item.value.toLowerCase() === fill.value.toLowerCase() ||
-          item.text.toLowerCase() === fill.value.toLowerCase(),
+          optionMatches(item.value, fill.value) ||
+          optionMatches(item.text, fill.value),
       );
       if (!option)
         return { fieldId: fill.fieldId, status: "unsupported_option" };

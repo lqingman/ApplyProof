@@ -19,6 +19,7 @@ export const mayaProfile = candidateProfileSchema.parse({
       id: "education-ubc",
       school: "University of British Columbia",
       degree: "BSc in Computer Science",
+      startDate: "2022-09-01",
       graduationDate: "2026-05-15",
     },
   ],
@@ -39,10 +40,14 @@ export const mayaProfile = candidateProfileSchema.parse({
     relocation: "yes",
   },
   workAuthorization: {
-    canada: "authorized",
+    canada: { authorized: "yes", sponsorship: "no" },
   },
   demographics: {
     genderIdentity: "woman",
+    raceEthnicity: "asian",
+    disabilityStatus: "no",
+    lgbtqIdentity: "decline",
+    veteranStatus: "no",
   },
   evidence: [
     {

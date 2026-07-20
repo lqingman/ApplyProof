@@ -30,15 +30,19 @@ describe("local My Profile storage", () => {
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         "applyproof.myProfile.v1": mayaProfile,
-        "applyproof.reusableAnswers.v1": [
+        "applyproof.reusableAnswers.v1": expect.arrayContaining([
           expect.objectContaining({
-            canonicalKey: "work_authorization.canada",
-            value: "Authorized to work in Canada",
+            canonicalKey: "work_authorization.canada.authorized",
+            value: "Yes",
             source: "explicit_profile_choice",
             scope: { country: "CA" },
             timeDependent: false,
           }),
-        ],
+          expect.objectContaining({
+            canonicalKey: "work_authorization.canada.sponsorship",
+            value: "No",
+          }),
+        ]),
       }),
     );
 
@@ -58,6 +62,7 @@ describe("local My Profile storage", () => {
       ...mayaProfile,
       headline: "Legacy headline",
       education: mayaProfile.education[0],
+      workAuthorization: { canada: "requires_sponsorship" },
     } as Record<string, unknown>;
     delete legacy.experience;
     get.mockResolvedValue({
@@ -72,6 +77,9 @@ describe("local My Profile storage", () => {
         },
       ],
       experience: [],
+      workAuthorization: {
+        canada: { authorized: "yes", sponsorship: "yes" },
+      },
     });
   });
 
@@ -86,8 +94,8 @@ describe("local My Profile storage", () => {
 
   it("loads schema-validated reusable answers separately from profile facts", async () => {
     const answer = {
-      canonicalKey: "work_authorization.canada",
-      value: "Authorized to work in Canada",
+      canonicalKey: "work_authorization.canada.authorized",
+      value: "Yes",
       source: "explicit_profile_choice",
       confirmedAt: "2026-07-19T20:00:00.000Z",
       scope: { country: "CA" },

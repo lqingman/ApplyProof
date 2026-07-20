@@ -123,7 +123,7 @@ Deterministic values and mapped checkboxes are inserted after the user initiates
 
 The complete open-ended-question workflow, API contract, evidence rules, fixture mode, OpenRouter mode, memory policy, and failure behavior are defined in [the grounded answer generation design](docs/ANSWER_GENERATION_DESIGN.md).
 
-Resume files are parsed locally in the extension and are not uploaded or retained. Import supports Word `.docx` and text-based `.pdf` files up to 10 MB. Extracted identity, city/region, separate portfolio and LinkedIn links, multiple education records, work experience, and evidence remain editable before saving. Profile setup does not ask for a headline. Legacy `.doc`, encrypted PDFs, and scanned image-only PDFs without a text layer are not supported; explicit application choices are never inferred from resume text.
+New users can start `My Profile` directly with **From resume** or **From scratch**. Resume files are parsed locally in the extension and are not uploaded or retained. Import supports Word `.docx` and text-based `.pdf` files up to 10 MB. Extracted identity, city/region, separate portfolio and LinkedIn links, education start and graduation dates, multiple education records, work experience, and evidence remain editable before saving. Profile setup does not ask for a headline. Legacy `.doc`, encrypted PDFs, and scanned image-only PDFs without a text layer are not supported; work authorization and voluntary self-identification answers are never inferred from resume text.
 
 ## Planned product workflow before final demo polish
 
@@ -135,7 +135,7 @@ Resume files are parsed locally in the extension and are not uploaded or retaine
 6. Later semantically equivalent questions may reuse that answer when classification confidence is high.
 7. Time-dependent preferences can be reviewed again. Continue, Next, and Submit always remain user actions.
 
-For example, a confirmed answer to “Are you legally authorized to work in Canada?” may be stored as `work_authorization.canada` with its source and confirmation time. A later equivalent Canadian work-eligibility question may reuse it. That does not authorize ApplyProof to answer a different country's question, infer immigration status, accept legal terms, or submit the application.
+For example, “Are you legally authorized to work in Canada?” and “Will you require sponsorship?” are stored separately as `work_authorization.canada.authorized` and `work_authorization.canada.sponsorship`, with their source and confirmation time. Later equivalent Canadian questions may reuse the matching answer. That does not authorize ApplyProof to answer a different country's question, infer immigration status, accept legal terms, or submit the application.
 
 ## Website support
 

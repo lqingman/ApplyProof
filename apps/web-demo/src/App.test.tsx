@@ -19,7 +19,12 @@ describe("Northstar Labs application", () => {
       "type",
       "email",
     );
-    expect(screen.getByLabelText(/Work authorization/)).toBeRequired();
+    expect(
+      screen.getByLabelText(/legally authorized to work in Canada/),
+    ).toBeRequired();
+    expect(
+      screen.getByLabelText(/require employment sponsorship/),
+    ).toBeRequired();
     expect(
       screen.getByLabelText(/Describe a relevant project/),
     ).toHaveAttribute("maxlength", "700");
@@ -37,7 +42,7 @@ describe("Northstar Labs application", () => {
 
     const fields = scanDocument(document);
 
-    expect(fields).toHaveLength(18);
+    expect(fields).toHaveLength(24);
     expect(fields.every((field) => field.label.length > 2)).toBe(true);
     expect(fields.some((field) => field.id === "password")).toBe(false);
     expect(fields.find((field) => field.id === "relocation")).toMatchObject({
@@ -61,7 +66,7 @@ describe("Northstar Labs application", () => {
     const plan = planAutofill(mayaProfile, scanDocument(document));
     const results = fillDocument(document, plan.fills);
 
-    expect(plan.fills).toHaveLength(14);
+    expect(plan.fills).toHaveLength(20);
     expect(results.every((result) => result.status === "filled")).toBe(true);
     expect(screen.getByLabelText(/First name/)).toHaveValue("Maya");
     expect(screen.getByLabelText(/Email address/)).toHaveValue(
@@ -70,10 +75,24 @@ describe("Northstar Labs application", () => {
     expect(screen.getByLabelText(/School or university/)).toHaveValue(
       "University of British Columbia",
     );
-    expect(screen.getByLabelText(/Work authorization/)).toHaveValue(
-      "Authorized to work in Canada",
+    expect(screen.getByLabelText(/Education start date/)).toHaveValue(
+      "2022-09-01",
+    );
+    expect(
+      screen.getByLabelText(/legally authorized to work in Canada/),
+    ).toHaveValue("Yes");
+    expect(screen.getByLabelText(/require employment sponsorship/)).toHaveValue(
+      "No",
     );
     expect(screen.getByLabelText("Woman")).toBeChecked();
+    expect(screen.getByLabelText("Asian")).toBeChecked();
+    expect(
+      document.querySelector('input[name="disability"][value="no"]'),
+    ).toBeChecked();
+    expect(
+      document.querySelector('input[name="lgbtq"][value="decline"]'),
+    ).toBeChecked();
+    expect(screen.getByLabelText("Not a veteran")).toBeChecked();
     expect(screen.getByLabelText(/I confirm that I reviewed/)).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Submit application" }),

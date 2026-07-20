@@ -12,9 +12,11 @@ describe("resume text parser", () => {
 
       EDUCATION
       University of British Columbia
-      Bachelor of Science in Computer Science — May 2026
+      Bachelor of Science in Computer Science
+      September 2022 - May 2026
       Langara College
-      Diploma in Web Development — May 2023
+      Diploma in Web Development
+      September 2021 - May 2023
 
       WORK EXPERIENCE
       Software Engineering Co-op
@@ -41,12 +43,14 @@ describe("resume text parser", () => {
     expect(result.education).toEqual([
       {
         school: "University of British Columbia",
-        degree: "Bachelor of Science in Computer Science — May 2026",
+        degree: "Bachelor of Science in Computer Science",
+        startDate: "2022-09-01",
         graduationDate: "2026-05-01",
       },
       {
         school: "Langara College",
-        degree: "Diploma in Web Development — May 2023",
+        degree: "Diploma in Web Development",
+        startDate: "2021-09-01",
         graduationDate: "2023-05-01",
       },
     ]);
